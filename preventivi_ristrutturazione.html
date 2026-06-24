@@ -507,7 +507,11 @@ function tipoBadge(tipo){
 var DEFAULT_TIPI=['Elettricista','Idraulico','Termotecnico','Muratore','Falegname','Pittore','Serramentista','Geometra','Architetto','Altro'];
 function getTipi(){
   if(!DB.tipiProf||!DB.tipiProf.length) return DEFAULT_TIPI.map(function(n,i){return {nome:n,bg:TIPO_COLORS[i%TIPO_COLORS.length].bg,fg:TIPO_COLORS[i%TIPO_COLORS.length].fg};});
-  return DB.tipiProf;
+  // Normalize: convert any plain strings to objects
+  return DB.tipiProf.map(function(t,i){
+    if(typeof t==='string') return {nome:t,bg:TIPO_COLORS[i%TIPO_COLORS.length].bg,fg:TIPO_COLORS[i%TIPO_COLORS.length].fg};
+    return t;
+  });
 }
 function getTipiNomi(){
   return getTipi().map(function(t){return typeof t==='string'?t:t.nome;});
@@ -969,6 +973,50 @@ function deleteRata(prevId,idx){
   var x=DB.preventivi.find(function(p){return p.id===prevId;});
   if(!x||!x.rate)return;
   if(confirm('Eliminare questa rata?')){x.rate.splice(idx,1);saveDB();renderDettaglio();}
+}
+
+function editTipo(idx){
+  var tipi=getTipi();
+  var t=tipi[idx];
+  var nome=typeof t==='string'?t:t.nome;
+  var bg=typeof t==='object'&&t.bg?t.bg:'#E8F0FE';
+  var fg=typeof t==='object'&&t.fg?t.fg:'#1A56DB';
+  document.getElementById('modal-content').innerHTML=
+    '<h3>Modifica tipo</h3>'+
+    '<div class="frow"><label>Nome</label><input id="et-nome" value="'+nome+'"></div>'+
+    '<div class="frow c2">'+
+    '<div><label>Colore sfondo</label><input id="et-bg" type="color" value="'+bg+'" style="width:100%;height:38px;cursor:pointer;border:.5px solid var(--border2);border-radius:var(--radius);padding:2px"></div>'+
+    '<div><label>Colore testo</label><input id="et-fg" type="color" value="'+fg+'" style="width:100%;height:38px;cursor:pointer;border:.5px solid var(--border2);border-radius:var(--radius);padding:2px"></div>'+
+    '</div>'+
+    '<div class="frow"><label>Anteprima</label><div id="et-preview" style="padding:6px 0">'+tipoBadge(nome)+'</div></div>'+
+    '<div class="btn-row">'+
+    '<button class="btn" onclick="closeModal()">Annulla</button>'+
+    '<button class="btn primary" onclick="saveTipo('+idx+')">Salva</button>'+
+    '</div>';
+  // Live preview
+  setTimeout(function(){
+    function upd(){var n=document.getElementById('et-nome'),b=document.getElementById('et-bg'),f=document.getElementById('et-fg'),p=document.getElementById('et-preview');if(p)p.innerHTML='<span class="tipo-badge" style="background:'+b.value+';color:'+f.value+'">'+n.value+'</span>';}
+    var els=['et-nome','et-bg','et-fg'];
+    els.forEach(function(id){var el=document.getElementById(id);if(el)el.addEventListener('input',upd);});
+  },50);
+  openModal();
+}
+
+function saveTipo(idx){
+  var tipi=getTipi().slice();
+  var nome=(v('et-nome')||'').trim();
+  var bg=document.getElementById('et-bg')&&document.getElementById('et-bg').value||'#E8F0FE';
+  var fg=document.getElementById('et-fg')&&document.getElementById('et-fg').value||'#1A56DB';
+  if(!nome){flash('Inserisci un nome.','warning');return;}
+  // Update preventivi that use the old name
+  var oldNome=typeof tipi[idx]==='string'?tipi[idx]:tipi[idx].nome;
+  if(oldNome!==nome){
+    DB.preventivi.forEach(function(p){if(p.tipo===oldNome)p.tipo=nome;});
+  }
+  tipi[idx]={nome:nome,bg:bg,fg:fg};
+  DB.tipiProf=tipi;
+  saveDB();closeModal();renderImpostazioni();
+  flash('Tipo aggiornato.','success');
 }
 
 function openModalVoce(prevId){
