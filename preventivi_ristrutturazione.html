@@ -145,6 +145,7 @@ tfoot td{font-weight:500;background:var(--bg2);border-top:.5px solid var(--borde
 .drive-dot.saving{background:#854F0B;animation:pulse 1s infinite}
 .drive-dot.error{background:#A32D2D}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
@@ -265,6 +266,13 @@ const CLIENT_ID = '556181593040-hd049ep29sae2ge7uut9p644vs03colg.apps.googleuser
 const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 const DRIVE_FILE_NAME = 'preventivi_ristrutturazione_data.json';
   const DRIVE_FOLDER_ID = '1ngCmFkcxf5fK0w_FtSHdUqoAcwEdrx6n';
+  // La chiave API viene salvata nel browser dell'utente, mai nel codice
+  function getAnthropicKey() {
+    return localStorage.getItem('anthropic_key') || '';
+  }
+  function setAnthropicKey(k) {
+    localStorage.setItem('anthropic_key', k);
+  }
 
 // ── STATO ─────────────────────────────────────────────────────────────────
 let DB = { preventivi: [], pagamenti: [], fatture: [] };
@@ -510,6 +518,16 @@ function openModalPreventivo(id) {
   const x = id ? DB.preventivi.find(p => p.id === id) : null;
   document.getElementById('modal-content').innerHTML = `
     <h3>${x ? 'Modifica preventivo' : 'Nuovo preventivo'}</h3>
+    ${!x ? `
+    <div style="border:.5px solid var(--border2);border-radius:var(--radius);padding:1rem;margin-bottom:1rem;background:var(--bg2)">
+      <div style="font-size:12px;font-weight:500;margin-bottom:8px;color:var(--text2);text-transform:uppercase;letter-spacing:.04em">📎 Carica preventivo (PDF o foto)</div>
+      <label style="display:flex;align-items:center;justify-content:center;gap:8px;padding:20px;border:1.5px dashed var(--border2);border-radius:var(--radius);cursor:pointer;font-size:13px;color:var(--text2);background:var(--bg);text-transform:none;font-weight:normal;letter-spacing:0" id="upload-label">
+        <i class="ti ti-upload" style="font-size:18px"></i>
+        <span id="upload-label-text">Clicca per scegliere o trascina qui il file</span>
+        <input type="file" id="f-file" accept=".pdf,image/*" style="display:none" onchange="handleFileSelected(event)">
+      </label>
+      <div id="ai-status" style="display:none;margin-top:8px;font-size:12px;color:var(--text2);text-align:center"></div>
+    </div>` : ''}
     <div class="frow c2">
       <div><label>Categoria lavori</label><input id="f-cat" value="${x?.categoria||''}" placeholder="es. Impianto idraulico"></div>
       <div><label>Professionista / Azienda</label><input id="f-prof" value="${x?.professionista||''}" placeholder="es. Idraulica Rossi Srl"></div>
@@ -529,6 +547,100 @@ function openModalPreventivo(id) {
       <button class="btn primary" onclick="savePreventivo('${x?.id||''}')">Salva</button>
     </div>`;
   openModal();
+}
+
+async function handleFileSelected(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const label = document.getElementById('upload-label-text');
+  const status = document.getElementById('ai-status');
+  label.textContent = file.name;
+  status.style.display = 'block';
+  // Controlla chiave API
+  let apiKey = getAnthropicKey();
+  if (!apiKey) {
+    apiKey = prompt('Inserisci la tua Anthropic API Key (sk-ant-...):');
+    if (!apiKey) { status.style.display='block'; status.innerHTML = '⚠️ Chiave API non inserita.'; return; }
+    setAnthropicKey(apiKey.trim());
+  }
+
+  status.innerHTML = '<i class="ti ti-loader" style="animation:spin 1s linear infinite;display:inline-block"></i> Lettura del file in corso…';
+
+  try {
+    const base64 = await fileToBase64(file);
+    const isPdf = file.type === 'application/pdf';
+    const mediaType = isPdf ? 'application/pdf' : file.type;
+
+    status.innerHTML = '<i class="ti ti-loader" style="animation:spin 1s linear infinite;display:inline-block"></i> Claude sta analizzando il preventivo…';
+
+    const body = {
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 1000,
+      messages: [{
+        role: 'user',
+        content: [
+          {
+            type: isPdf ? 'document' : 'image',
+            source: { type: 'base64', media_type: mediaType, data: base64 }
+          },
+          {
+            type: 'text',
+            text: `Analizza questo preventivo ed estrai i seguenti dati in formato JSON puro, senza markdown né backtick:
+{
+  "categoria": "tipo di lavori (es. Impianto idraulico, Pavimentazione, ecc.)",
+  "professionista": "nome azienda o professionista",
+  "data": "data del preventivo in formato YYYY-MM-DD, o stringa vuota se non trovata",
+  "imponibile": numero senza simbolo euro (solo cifra, es. 4500.00),
+  "iva": percentuale IVA come numero (es. 22),
+  "note": "breve descrizione dei lavori principali"
+}
+Se un campo non è presente nel documento lascialo come stringa vuota o null. Rispondi SOLO con il JSON.`
+          }
+        ]
+      }]
+    };
+
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify(body)
+    });
+
+    if (resp.status === 401) { localStorage.removeItem('anthropic_key'); throw new Error('Chiave API non valida. Verrà richiesta al prossimo tentativo.'); }
+    if (!resp.ok) throw new Error('Errore API: ' + resp.status);
+    const data = await resp.json();
+    const text = data.content[0].text.trim();
+    const parsed = JSON.parse(text);
+
+    // Compila i campi
+    if (parsed.categoria) document.getElementById('f-cat').value = parsed.categoria;
+    if (parsed.professionista) document.getElementById('f-prof').value = parsed.professionista;
+    if (parsed.data) document.getElementById('f-data').value = parsed.data;
+    if (parsed.imponibile) document.getElementById('f-imp').value = parsed.imponibile;
+    if (parsed.iva) document.getElementById('f-iva').value = parsed.iva;
+    if (parsed.note) document.getElementById('f-note').value = parsed.note;
+
+    status.innerHTML = '✅ Dati estratti! Controlla i campi e correggi se necessario.';
+    status.style.color = 'var(--green)';
+  } catch(e) {
+    status.innerHTML = '⚠️ Errore nell\'estrazione. Compila i campi manualmente.';
+    status.style.color = 'var(--amber)';
+    console.error(e);
+  }
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
 
 function savePreventivo(id) {
