@@ -146,6 +146,30 @@ tfoot td{font-weight:500;background:var(--bg2);border-top:.5px solid var(--borde
 .drive-dot.error{background:#A32D2D}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+
+/* MOBILE RESPONSIVE TABLES */
+.table-wrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+@media(max-width:680px){
+  .grid4{grid-template-columns:1fr 1fr}
+  .topbar-title span.title-text{display:none}
+  /* Card list for preventivi on mobile */
+  .prev-card{background:var(--bg);border:.5px solid var(--border);border-radius:var(--radius);padding:1rem;margin-bottom:.75rem}
+  .prev-card .pc-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.5rem}
+  .prev-card .pc-cat{font-weight:500;font-size:14px}
+  .prev-card .pc-prof{font-size:13px;color:var(--text2);margin-bottom:.4rem}
+  .prev-card .pc-row{display:flex;justify-content:space-between;align-items:center;font-size:13px}
+  .prev-card .pc-tot{font-weight:500;font-size:15px}
+  /* Dettaglio voci mobile */
+  .voce-card{border:.5px solid var(--border);border-radius:var(--radius);padding:.75rem;margin-bottom:.5rem;font-size:13px}
+  .voce-card .vc-desc{font-weight:500;margin-bottom:4px}
+  .voce-card .vc-row{display:flex;justify-content:space-between;color:var(--text2);font-size:12px}
+}
+/* Dettaglio voci desktop */
+.voci-table{width:100%;border-collapse:collapse;font-size:13px}
+.voci-table th{text-align:left;font-weight:500;padding:7px 10px;border-bottom:.5px solid var(--border);color:var(--text2);font-size:11px;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+.voci-table td{padding:7px 10px;border-bottom:.5px solid var(--border);vertical-align:middle}
+.voci-table tbody tr:last-child td{border-bottom:none}
+.voci-table tfoot td{font-weight:500;background:var(--bg2);border-top:.5px solid var(--border)}
 </style>
 </head>
 <body>
@@ -195,6 +219,7 @@ tfoot td{font-weight:500;background:var(--bg2);border-top:.5px solid var(--borde
   <div class="wrap">
     <div class="tabs" role="tablist">
       <button class="tab active" onclick="showTab('preventivi')">Preventivi</button>
+      <button class="tab" onclick="showTab('dettaglio')">Dettaglio</button>
       <button class="tab" onclick="showTab('pagamenti')">Pagamenti</button>
       <button class="tab" onclick="showTab('cashflow')">Cashflow</button>
       <button class="tab" onclick="showTab('riconciliazione')">Riconciliazione</button>
@@ -209,6 +234,21 @@ tfoot td{font-weight:500;background:var(--bg2);border-top:.5px solid var(--borde
           <button class="btn primary" onclick="openModalPreventivo()"><i class="ti ti-plus"></i> Nuovo preventivo</button>
         </div>
         <div id="table-preventivi"></div>
+      </div>
+    </div>
+
+    <!-- DETTAGLIO -->
+    <div id="page-dettaglio" class="page">
+      <div class="card">
+        <div class="card-header">
+          <h3>Dettaglio preventivo</h3>
+          <div style="display:flex;gap:8px;align-items:center">
+            <select id="dettaglio-select" onchange="renderDettaglio()" style="font-size:13px;padding:6px 10px;border:.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text)">
+              <option value="">— Seleziona preventivo —</option>
+            </select>
+          </div>
+        </div>
+        <div id="dettaglio-content"><div class="empty">Seleziona un preventivo dal menu in alto.</div></div>
       </div>
     </div>
 
@@ -260,6 +300,7 @@ tfoot td{font-weight:500;background:var(--bg2);border-top:.5px solid var(--borde
 
 <!-- GOOGLE APIs -->
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 <script>
 // ── CONFIG ────────────────────────────────────────────────────────────────
 const CLIENT_ID = '556181593040-hd049ep29sae2ge7uut9p644vs03colg.apps.googleusercontent.com';
@@ -459,7 +500,7 @@ function saveDB() {
 
 function showTab(t) {
   document.querySelectorAll('.tab').forEach((b,i) =>
-    b.classList.toggle('active', ['preventivi','pagamenti','cashflow','riconciliazione'][i] === t));
+    b.classList.toggle('active', ['preventivi','dettaglio','pagamenti','cashflow','riconciliazione'][i] === t));
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-' + t).classList.add('active');
   renderCurrentTab();
@@ -470,6 +511,7 @@ function renderCurrentTab() {
   if (!active) return;
   const id = active.id.replace('page-','');
   if (id === 'preventivi') renderPreventivi();
+  else if (id === 'dettaglio') { populateDettaglioSelect(); renderDettaglio(); }
   else if (id === 'pagamenti') renderPagamenti();
   else if (id === 'cashflow') renderCashflow();
   else if (id === 'riconciliazione') renderFatture();
@@ -490,28 +532,58 @@ function renderPreventivi() {
     document.getElementById('table-preventivi').innerHTML = '<div class="empty">Nessun preventivo. Usa "Nuovo preventivo" per iniziare.</div>';
     return;
   }
-  let rows = '';
-  p.forEach(x => {
-    const imp = parseFloat(x.imponibile||0), iva = imp * parseFloat(x.iva||22)/100;
-    rows += `<tr>
-      <td><strong>${x.categoria||'—'}</strong></td>
-      <td>${x.professionista||'—'}</td>
-      <td>${x.data||'—'}</td>
-      <td style="text-align:right">${fmt(imp)}</td>
-      <td style="text-align:right">${x.iva||22}%</td>
-      <td style="text-align:right"><strong>${fmt(imp+iva)}</strong></td>
-      <td><span class="badge ${bc(x.stato)}">${x.stato}</span></td>
-      <td><div class="action-icons">
-        <button class="icon-btn" onclick="openModalPreventivo('${x.id}')"><i class="ti ti-edit"></i></button>
-        <button class="icon-btn danger" onclick="deleteItem('preventivi','${x.id}',renderPreventivi)"><i class="ti ti-trash"></i></button>
-      </div></td></tr>`;
-  });
+  const isMobile = window.innerWidth < 680;
   const totAll = p.reduce((s,x) => s + parseFloat(x.imponibile||0)*(1+parseFloat(x.iva||22)/100), 0);
-  document.getElementById('table-preventivi').innerHTML = `<table>
-    <thead><tr><th>Categoria</th><th>Professionista</th><th>Data</th><th style="text-align:right">Imponibile</th><th style="text-align:right">IVA</th><th style="text-align:right">Totale</th><th>Stato</th><th></th></tr></thead>
-    <tbody>${rows}</tbody>
-    <tfoot><tr><td colspan="3">Totale generale</td><td></td><td></td><td style="text-align:right">${fmt(totAll)}</td><td colspan="2"></td></tr></tfoot>
-  </table>`;
+
+  if (isMobile) {
+    let cards = '';
+    p.forEach(x => {
+      const imp = parseFloat(x.imponibile||0), iva = imp * parseFloat(x.iva||22)/100;
+      cards += `<div class="prev-card">
+        <div class="pc-head">
+          <div>
+            <div class="pc-cat">${x.categoria||'—'}</div>
+            <div class="pc-prof">${x.professionista||'—'}</div>
+          </div>
+          <span class="badge ${bc(x.stato)}">${x.stato}</span>
+        </div>
+        <div class="pc-row">
+          <span style="color:var(--text2)">${x.data||'—'} · IVA ${x.iva||22}%</span>
+          <span class="pc-tot">${fmt(imp+iva)}</span>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:.6rem;justify-content:flex-end">
+          <button class="btn sm" onclick="openModalPreventivo('${x.id}')"><i class="ti ti-edit"></i> Modifica</button>
+          <button class="btn sm" onclick="showTab('dettaglio');setTimeout(()=>{document.getElementById('dettaglio-select').value='${x.id}';renderDettaglio()},50)"><i class="ti ti-list"></i> Dettaglio</button>
+          <button class="btn sm danger" onclick="deleteItem('preventivi','${x.id}',renderPreventivi)"><i class="ti ti-trash"></i></button>
+        </div>
+      </div>`;
+    });
+    cards += `<div style="padding:.75rem 0;font-size:13px;color:var(--text2);text-align:right">Totale generale: <strong>${fmt(totAll)}</strong></div>`;
+    document.getElementById('table-preventivi').innerHTML = cards;
+  } else {
+    let rows = '';
+    p.forEach(x => {
+      const imp = parseFloat(x.imponibile||0), iva = imp * parseFloat(x.iva||22)/100;
+      rows += `<tr>
+        <td><strong>${x.categoria||'—'}</strong></td>
+        <td>${x.professionista||'—'}</td>
+        <td>${x.data||'—'}</td>
+        <td style="text-align:right">${fmt(imp)}</td>
+        <td style="text-align:right">${x.iva||22}%</td>
+        <td style="text-align:right"><strong>${fmt(imp+iva)}</strong></td>
+        <td><span class="badge ${bc(x.stato)}">${x.stato}</span></td>
+        <td><div class="action-icons">
+          <button class="icon-btn" onclick="openModalPreventivo('${x.id}')"><i class="ti ti-edit"></i></button>
+          <button class="icon-btn" onclick="showTab('dettaglio');setTimeout(()=>{document.getElementById('dettaglio-select').value='${x.id}';renderDettaglio()},50)" title="Vedi dettaglio"><i class="ti ti-list"></i></button>
+          <button class="icon-btn danger" onclick="deleteItem('preventivi','${x.id}',renderPreventivi)"><i class="ti ti-trash"></i></button>
+        </div></td></tr>`;
+    });
+    document.getElementById('table-preventivi').innerHTML = `<div class="table-wrap"><table>
+      <thead><tr><th>Categoria</th><th>Professionista</th><th>Data</th><th style="text-align:right">Imponibile</th><th style="text-align:right">IVA</th><th style="text-align:right">Totale</th><th>Stato</th><th></th></tr></thead>
+      <tbody>${rows}</tbody>
+      <tfoot><tr><td colspan="3">Totale generale</td><td></td><td></td><td style="text-align:right">${fmt(totAll)}</td><td colspan="2"></td></tr></tfoot>
+    </table></div>`;
+  }
 }
 
 function openModalPreventivo(id) {
@@ -555,12 +627,7 @@ async function handleFileSelected(event) {
   const label = document.getElementById('upload-label-text');
   const status = document.getElementById('ai-status');
   status.style.display = 'block';
-
-  if (files.length === 1) {
-    label.textContent = files[0].name;
-  } else {
-    label.textContent = `${files.length} file selezionati`;
-  }
+  label.textContent = files.length === 1 ? files[0].name : `${files.length} file selezionati`;
 
   // Controlla chiave API
   let apiKey = getAnthropicKey();
@@ -573,35 +640,42 @@ async function handleFileSelected(event) {
   status.innerHTML = '<i class="ti ti-loader" style="animation:spin 1s linear infinite;display:inline-block"></i> Lettura dei file in corso…';
 
   try {
-    // Costruisci i content blocks per tutti i file
     const contentBlocks = [];
 
     for (const file of files) {
-      const base64 = await fileToBase64(file);
       const isPdf = file.type === 'application/pdf';
-      const mediaType = isPdf ? 'application/pdf' : file.type;
-      contentBlocks.push({
-        type: isPdf ? 'document' : 'image',
-        source: { type: 'base64', media_type: mediaType, data: base64 }
-      });
+
+      if (isPdf) {
+        // Estrai testo dal PDF con PDF.js (leggero, niente base64 enorme)
+        const text = await extractPdfText(file);
+        contentBlocks.push({ type: 'text', text: `[Contenuto PDF: ${file.name}]
+${text}` });
+      } else {
+        // Immagine: invia come base64 (le foto sono già compatte)
+        const base64 = await fileToBase64(file);
+        contentBlocks.push({
+          type: 'image',
+          source: { type: 'base64', media_type: file.type, data: base64 }
+        });
+      }
     }
 
-    // Aggiungi il prompt testuale
+    // Prompt di estrazione
     contentBlocks.push({
       type: 'text',
-      text: `Analizza ${files.length > 1 ? 'queste pagine del preventivo' : 'questo preventivo'} ed estrai i seguenti dati in formato JSON puro, senza markdown né backtick:
+      text: `Analizza questo preventivo ed estrai i seguenti dati in formato JSON puro, senza markdown né backtick:
 {
-  "categoria": "tipo di lavori (es. Impianto idraulico, Pavimentazione, ecc.)",
+  "categoria": "tipo di lavori (es. Impianto elettrico, Pavimentazione, ecc.)",
   "professionista": "nome azienda o professionista",
   "data": "data del preventivo in formato YYYY-MM-DD, o stringa vuota se non trovata",
-  "imponibile": numero senza simbolo euro (solo cifra, es. 4500.00),
+  "imponibile": numero senza simbolo euro (solo cifra, es. 11821.60),
   "iva": percentuale IVA come numero (es. 22),
-  "note": "breve descrizione dei lavori principali"
+  "note": "breve descrizione dei lavori principali, max 2 righe"
 }
-Se un campo non è presente nel documento lascialo come stringa vuota o null. Rispondi SOLO con il JSON.`
+Se un campo non è presente lascialo come stringa vuota o null. Rispondi SOLO con il JSON.`
     });
 
-    status.innerHTML = `<i class="ti ti-loader" style="animation:spin 1s linear infinite;display:inline-block"></i> Claude sta analizzando ${files.length > 1 ? files.length + ' pagine' : 'il preventivo'}…`;
+    status.innerHTML = '<i class="ti ti-loader" style="animation:spin 1s linear infinite;display:inline-block"></i> Claude sta analizzando il preventivo…';
 
     const resp = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -622,8 +696,8 @@ Se un campo non è presente nel documento lascialo come stringa vuota o null. Ri
     if (!resp.ok) throw new Error('Errore API: ' + resp.status);
 
     const data = await resp.json();
-    const text = data.content[0].text.trim();
-    const parsed = JSON.parse(text);
+    const raw = data.content[0].text.trim().replace(/```json|```/g, '');
+    const parsed = JSON.parse(raw);
 
     if (parsed.categoria) document.getElementById('f-cat').value = parsed.categoria;
     if (parsed.professionista) document.getElementById('f-prof').value = parsed.professionista;
@@ -631,14 +705,32 @@ Se un campo non è presente nel documento lascialo come stringa vuota o null. Ri
     if (parsed.imponibile) document.getElementById('f-imp').value = parsed.imponibile;
     if (parsed.iva) document.getElementById('f-iva').value = parsed.iva;
     if (parsed.note) document.getElementById('f-note').value = parsed.note;
+    // Salva voci temporaneamente finché non si clicca Salva
+    window._pendingVoci = parsed.voci || [];
 
-    status.innerHTML = `✅ Dati estratti da ${files.length > 1 ? files.length + ' pagine' : '1 file'}! Controlla i campi e correggi se necessario.`;
+    const nVoci = window._pendingVoci.length;
+    status.innerHTML = \`✅ Dati estratti\${nVoci ? \` con \${nVoci} voci di dettaglio\` : ''}! Controlla i campi e correggi se necessario.\`;
     status.style.color = 'var(--green)';
   } catch(e) {
     status.innerHTML = '⚠️ ' + e.message;
     status.style.color = 'var(--amber)';
     console.error(e);
   }
+}
+
+async function extractPdfText(file) {
+  const pdfjsLib = window['pdfjs-dist/build/pdf'];
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  let fullText = '';
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const tc = await page.getTextContent();
+    fullText += tc.items.map(item => item.str).join(' ') + '
+';
+  }
+  return fullText;
 }
 
 function fileToBase64(file) {
@@ -651,7 +743,14 @@ function fileToBase64(file) {
 }
 
 function savePreventivo(id) {
-  const obj = {id:id||uid(),categoria:v('f-cat'),professionista:v('f-prof'),data:v('f-data'),imponibile:v('f-imp'),iva:v('f-iva'),stato:v('f-stato'),scadenza:v('f-scad'),note:v('f-note')};
+  const existing = id ? DB.preventivi.find(p=>p.id===id) : null;
+  const obj = {
+    id:id||uid(),
+    categoria:v('f-cat'),professionista:v('f-prof'),data:v('f-data'),
+    imponibile:v('f-imp'),iva:v('f-iva'),stato:v('f-stato'),scadenza:v('f-scad'),note:v('f-note'),
+    voci: existing?.voci || window._pendingVoci || []
+  };
+  window._pendingVoci = null;
   if (id) { const i = DB.preventivi.findIndex(p=>p.id===id); DB.preventivi[i]=obj; }
   else DB.preventivi.push(obj);
   saveDB(); closeModal(); renderPreventivi();
@@ -818,6 +917,83 @@ function saveFattura(id) {
   if (id) { const i=DB.fatture.findIndex(f=>f.id===id); DB.fatture[i]=obj; }
   else DB.fatture.push(obj);
   saveDB(); closeModal(); renderFatture();
+}
+
+// ── DETTAGLIO ────────────────────────────────────────────────────────────
+function populateDettaglioSelect() {
+  const sel = document.getElementById('dettaglio-select');
+  if (!sel) return;
+  const current = sel.value;
+  sel.innerHTML = '<option value="">— Seleziona preventivo —</option>';
+  DB.preventivi.forEach(x => {
+    const opt = document.createElement('option');
+    opt.value = x.id;
+    opt.textContent = (x.categoria||'—') + ' — ' + (x.professionista||'—');
+    if (x.id === current) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+function renderDettaglio() {
+  const sel = document.getElementById('dettaglio-select');
+  const container = document.getElementById('dettaglio-content');
+  if (!sel || !container) return;
+  const id = sel.value;
+  if (!id) { container.innerHTML = '<div class="empty">Seleziona un preventivo dal menu in alto.</div>'; return; }
+  const x = DB.preventivi.find(p => p.id === id);
+  if (!x) { container.innerHTML = '<div class="empty">Preventivo non trovato.</div>'; return; }
+
+  const imp = parseFloat(x.imponibile||0);
+  const iva = imp * parseFloat(x.iva||22)/100;
+  const voci = x.voci || [];
+  const isMobile = window.innerWidth < 680;
+
+  let voceHtml = '';
+  if (voci.length) {
+    if (isMobile) {
+      voceHtml = voci.map(v => `
+        <div class="voce-card">
+          <div class="vc-desc">${v.descrizione||'—'}</div>
+          <div class="vc-row">
+            <span>${v.quantita!=null?v.quantita:''} ${v.unita||''}</span>
+            <span>${v.prezzo_unitario!=null?fmt(v.prezzo_unitario):''}</span>
+            <strong>${v.totale!=null?fmt(v.totale):'—'}</strong>
+          </div>
+        </div>`).join('');
+    } else {
+      const righe = voci.map(v => `<tr>
+        <td>${v.descrizione||'—'}</td>
+        <td style="text-align:right">${v.quantita!=null?v.quantita:''}</td>
+        <td>${v.unita||''}</td>
+        <td style="text-align:right">${v.prezzo_unitario!=null?fmt(v.prezzo_unitario):'—'}</td>
+        <td style="text-align:right"><strong>${v.totale!=null?fmt(v.totale):'—'}</strong></td>
+      </tr>`).join('');
+      voceHtml = `<div class="table-wrap"><table class="voci-table">
+        <thead><tr><th>Descrizione</th><th style="text-align:right">Qtà</th><th>U.M.</th><th style="text-align:right">Prezzo unit.</th><th style="text-align:right">Totale</th></tr></thead>
+        <tbody>${righe}</tbody>
+        <tfoot>
+          <tr><td colspan="4">Imponibile</td><td style="text-align:right">${fmt(imp)}</td></tr>
+          <tr><td colspan="4">IVA (${x.iva||22}%)</td><td style="text-align:right">${fmt(iva)}</td></tr>
+          <tr><td colspan="4"><strong>Totale con IVA</strong></td><td style="text-align:right"><strong>${fmt(imp+iva)}</strong></td></tr>
+        </tfoot>
+      </table></div>`;
+    }
+  } else {
+    voceHtml = `<div class="alert info" style="margin-top:1rem"><i class="ti ti-info-circle"></i>
+      <span>Nessuna voce di dettaglio. Elimina il preventivo e ricaricalo con il PDF per estrarre le voci automaticamente.</span>
+    </div>`;
+  }
+
+  container.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:1.25rem">
+      <div class="metric"><div class="lbl">Professionista</div><div style="font-size:14px;font-weight:500;margin-top:4px">${x.professionista||'—'}</div></div>
+      <div class="metric"><div class="lbl">Data</div><div style="font-size:14px;font-weight:500;margin-top:4px">${x.data||'—'}</div></div>
+      <div class="metric"><div class="lbl">Imponibile</div><div style="font-size:14px;font-weight:500;margin-top:4px">${fmt(imp)}</div></div>
+      <div class="metric"><div class="lbl">Totale con IVA</div><div style="font-size:15px;font-weight:500;margin-top:4px">${fmt(imp+iva)}</div></div>
+    </div>
+    ${x.note ? `<div style="font-size:13px;color:var(--text2);margin-bottom:1rem;padding:.75rem;background:var(--bg2);border-radius:var(--radius)">${x.note}</div>` : ''}
+    <div style="font-size:12px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.75rem">Voci di dettaglio (${voci.length})</div>
+    ${voceHtml}`;
 }
 
 // ── UTILS ─────────────────────────────────────────────────────────────────
