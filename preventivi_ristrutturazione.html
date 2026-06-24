@@ -473,9 +473,9 @@ function renderPreventivi(){
   var p=DB.preventivi;
   var acc=p.filter(function(x){return x.stato==='Accettato';});
   var inVal=p.filter(function(x){return x.stato==='In valutazione';});
-  var totVal=inVal.reduce(function(s,x){return s+parseFloat(x.imponibile||0)*(1+parseFloat(x.iva||22)/100);},0);
+  var totVal=inVal.reduce(function(s,x){return s+(function(){var i=parseFloat(x.imponibile||0),ca=parseFloat(x.cassa||0),iv=parseFloat(x.iva||22);return i*(1+ca/100)*(1+iv/100);}());},0);
   var totImp=acc.reduce(function(s,x){return s+parseFloat(x.imponibile||0);},0);
-  var totTot=acc.reduce(function(s,x){return s+parseFloat(x.imponibile||0)*(1+parseFloat(x.iva||22)/100);},0);
+  var totTot=acc.reduce(function(s,x){return s+(function(){var i=parseFloat(x.imponibile||0),ca=parseFloat(x.cassa||0),iv=parseFloat(x.iva||22);return i*(1+ca/100)*(1+iv/100);}());},0);
   document.getElementById('metrics-prev').innerHTML=
     '<div class="metric"><div class="lbl">Totale preventivi</div><div class="val">'+p.length+'</div></div>'+
     '<div class="metric"><div class="lbl">Accettati</div><div class="val">'+acc.length+'</div></div>'+
@@ -483,11 +483,11 @@ function renderPreventivi(){
     '<div class="metric"><div class="lbl">Imponibile accettati</div><div class="val" style="font-size:15px">\u20AC '+parseFloat(totImp).toLocaleString('it-IT',{minimumFractionDigits:2})+'</div></div>'+
     '<div class="metric"><div class="lbl">Totale con IVA</div><div class="val" style="font-size:15px">\u20AC '+parseFloat(totTot).toLocaleString('it-IT',{minimumFractionDigits:2})+'</div></div>';
   if(!p.length){document.getElementById('table-preventivi').innerHTML='<div class="empty">Nessun preventivo. Usa "Nuovo preventivo" per iniziare.</div>';return;}
-  var totAll=p.reduce(function(s,x){return s+parseFloat(x.imponibile||0)*(1+parseFloat(x.iva||22)/100);},0);
+  var totAll=p.reduce(function(s,x){return s+(function(){var i=parseFloat(x.imponibile||0),ca=parseFloat(x.cassa||0),iv=parseFloat(x.iva||22);return i*(1+ca/100)*(1+iv/100);}());},0);
   // Mobile cards
   var cards='';
   p.forEach(function(x){
-    var imp=parseFloat(x.imponibile||0),iva=imp*parseFloat(x.iva||22)/100;
+    var imp=parseFloat(x.imponibile||0),cassa=imp*parseFloat(x.cassa||0)/100,iva=(imp+cassa)*parseFloat(x.iva||22)/100;
     cards+='<div class="prev-card">'+
       '<div class="pc-top"><div><div class="pc-cat">'+(x.categoria||'\u2014')+'</div><div class="pc-prof">'+(x.professionista||'\u2014')+'</div>'+(x.tipo?'<div style="margin-top:3px"><span class="tipo-badge tipo-'+x.tipo.toLowerCase()+'">'+x.tipo+'</span></div>':'')+'</div>'+
       '<span class="badge '+bc(x.stato)+'">'+x.stato+'</span></div>'+
@@ -502,7 +502,7 @@ function renderPreventivi(){
   // Desktop table
   var rows='';
   p.forEach(function(x){
-    var imp=parseFloat(x.imponibile||0),iva=imp*parseFloat(x.iva||22)/100;
+    var imp=parseFloat(x.imponibile||0),cassa=imp*parseFloat(x.cassa||0)/100,iva=(imp+cassa)*parseFloat(x.iva||22)/100;
     rows+='<tr>'+
       '<td>'+(x.tipo?'<span class="tipo-badge tipo-'+x.tipo.toLowerCase()+'">'+x.tipo+'</span>':'\u2014')+'</td>'+
       '<td><strong>'+(x.categoria||'\u2014')+'</strong></td>'+
@@ -558,7 +558,11 @@ function openModalPreventivo(id){
     '<div><label>Professionista / Azienda</label><input id="f-prof" value="'+(x&&x.professionista||'')+'" placeholder="es. Idraulica Rossi Srl"></div></div>'+
     '<div class="frow c3"><div><label>Data preventivo</label><input id="f-data" type="date" value="'+(x&&x.data||'')+'"></div>'+
     '<div><label>Imponibile (\u20AC)</label><input id="f-imp" type="number" step="0.01" value="'+(x&&x.imponibile||'')+'" placeholder="0.00"></div>'+
-    '<div><label>IVA (%)</label><input id="f-iva" type="number" value="'+(x&&x.iva||22)+'" min="0" max="100"></div></div>'+
+    '<div><label>IVA (%)</label><input id="f-iva" type="number" value="'+(x&&x.iva||22)+'" min="0" max="100" oninput="updateTotalePreventivo()"></div></div>'+
+    '<div class="frow c2">'+
+    '<div><label>Cassa previdenziale (%)</label><input id="f-cassa" type="number" step="0.01" value="'+(x&&x.cassa||0)+'" min="0" max="20" placeholder="es. 4 per geometri, 2 per INARCASSA" oninput="updateTotalePreventivo()"></div>'+
+    '<div><label>Totale stimato</label><div id="f-tot-preview" style="padding:7px 10px;background:var(--bg2);border-radius:var(--radius);font-size:13px;font-weight:500">\u2014</div></div>'+
+    '</div>'+
     '<div class="frow c2"><div><label>Stato</label><select id="f-stato">'+statoOpts+'</select></div>'+
     '<div><label>Scadenza offerta</label><input id="f-scad" type="date" value="'+(x&&x.scadenza||'')+'"></div></div>'+
     '<div class="frow"><label>Note</label><textarea id="f-note" rows="2">'+(x&&x.note||'')+'</textarea></div>'+
@@ -567,11 +571,21 @@ function openModalPreventivo(id){
   openModal();
 }
 
+function updateTotalePreventivo(){
+  var imp=parseFloat(document.getElementById('f-imp')&&document.getElementById('f-imp').value||0);
+  var iva=parseFloat(document.getElementById('f-iva')&&document.getElementById('f-iva').value||22);
+  var ca=parseFloat(document.getElementById('f-cassa')&&document.getElementById('f-cassa').value||0);
+  var cVal=imp*ca/100;
+  var tot=imp+cVal+(imp+cVal)*iva/100;
+  var el=document.getElementById('f-tot-preview');
+  if(el)el.textContent=tot>0?'\u20AC '+tot.toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2}):'\u2014';
+}
+
 function savePreventivo(id){
   var existing=id?DB.preventivi.find(function(p){return p.id===id;}):null;
   var obj={id:id||uid(),tipo:v('f-tipo'),categoria:v('f-cat'),professionista:v('f-prof'),data:v('f-data'),
-    imponibile:v('f-imp'),iva:v('f-iva'),stato:v('f-stato'),scadenza:v('f-scad'),note:v('f-note'),
-    voci:(existing&&existing.voci)||window._pendingVoci||[]};
+    imponibile:v('f-imp'),iva:v('f-iva'),cassa:v('f-cassa'),stato:v('f-stato'),scadenza:v('f-scad'),note:v('f-note'),
+    voci:(existing&&existing.voci)||window._pendingVoci||[],rate:(existing&&existing.rate)||[]};
   window._pendingVoci=null;
   if(id){var i=DB.preventivi.findIndex(function(p){return p.id===id;});DB.preventivi[i]=obj;}
   else DB.preventivi.push(obj);
@@ -738,7 +752,7 @@ function renderDettaglio(){
   if(!id){container.innerHTML='<div class="empty">Seleziona un preventivo dal menu in alto.</div>';return;}
   var x=DB.preventivi.find(function(p){return p.id===id;});
   if(!x){container.innerHTML='<div class="empty">Preventivo non trovato.</div>';return;}
-  var imp=parseFloat(x.imponibile||0),iva=imp*parseFloat(x.iva||22)/100;
+  var imp=parseFloat(x.imponibile||0),cassa=imp*parseFloat(x.cassa||0)/100,iva=(imp+cassa)*parseFloat(x.iva||22)/100;
   var voci=x.voci||[];
   var rate=x.rate||[];
 
@@ -746,7 +760,8 @@ function renderDettaglio(){
     '<div class="metric"><div class="lbl">Professionista</div><div style="font-size:13px;font-weight:500;margin-top:4px">'+(x.professionista||'\u2014')+'</div></div>'+
     '<div class="metric"><div class="lbl">Data</div><div style="font-size:13px;font-weight:500;margin-top:4px">'+(x.data||'\u2014')+'</div></div>'+
     '<div class="metric"><div class="lbl">Imponibile</div><div style="font-size:13px;font-weight:500;margin-top:4px">\u20AC '+parseFloat(imp).toLocaleString('it-IT',{minimumFractionDigits:2})+'</div></div>'+
-    '<div class="metric"><div class="lbl">Totale con IVA</div><div style="font-size:14px;font-weight:500;margin-top:4px">\u20AC '+parseFloat(imp+iva).toLocaleString('it-IT',{minimumFractionDigits:2})+'</div></div>'+
+    (cassa>0?'<div class="metric"><div class="lbl">Cassa prev. ('+(x.cassa||0)+'%)</div><div style="font-size:13px;font-weight:500;margin-top:4px">\u20AC '+parseFloat(cassa).toLocaleString('it-IT',{minimumFractionDigits:2})+'</div></div>':'')+
+    '<div class="metric"><div class="lbl">Totale con IVA</div><div style="font-size:14px;font-weight:500;margin-top:4px">\u20AC '+parseFloat(imp+cassa+iva).toLocaleString('it-IT',{minimumFractionDigits:2})+'</div></div>'+
     '</div>';
   if(x.note)html+='<div style="font-size:13px;color:var(--text2);margin-bottom:1.25rem;padding:.75rem;background:var(--bg2);border-radius:var(--radius)">'+x.note+'</div>';
 
@@ -813,8 +828,8 @@ function openModalRata(prevId,rataIdx){
   var editMode=rataIdx!==undefined;
   var rata=editMode&&x.rate?x.rate[rataIdx]:null;
   if(editMode&&rata&&rata.stato==='Pagato'){flash('Questa rata è già stata pagata e non può essere modificata.','warning');return;}
-  var imp=parseFloat(x&&x.imponibile||0),iva=imp*parseFloat(x&&x.iva||22)/100;
-  var tot=Math.round((imp+iva)*100)/100;
+  var imp=parseFloat(x&&x.imponibile||0),ca=imp*parseFloat(x&&x.cassa||0)/100,iva=(imp+ca)*parseFloat(x&&x.iva||22)/100;
+  var tot=Math.round((imp+ca+iva)*100)/100;
   var statoOpts=STATI_PAG.map(function(s){return '<option>'+s+'</option>';}).join('');
   document.getElementById('modal-content').innerHTML=
     '<h3>'+(editMode?'Modifica rata':'Aggiungi rata di pagamento')+'</h3>'+
@@ -961,7 +976,7 @@ function savePagamento(id){
 // ---
 function renderCashflow(){
   var pg=DB.pagamenti;
-  var totI=DB.preventivi.filter(function(x){return x.stato==='Accettato';}).reduce(function(s,x){return s+parseFloat(x.imponibile||0)*(1+parseFloat(x.iva||22)/100);},0);
+  var totI=DB.preventivi.filter(function(x){return x.stato==='Accettato';}).reduce(function(s,x){return s+(function(){var i=parseFloat(x.imponibile||0),ca=parseFloat(x.cassa||0),iv=parseFloat(x.iva||22);return i*(1+ca/100)*(1+iv/100);}());},0);
   var totP=pg.filter(function(x){return x.stato==='Pagato';}).reduce(function(s,x){return s+parseFloat(x.importo||0);},0);
   document.getElementById('cf-totale').textContent='\u20AC '+parseFloat(totI).toLocaleString('it-IT',{minimumFractionDigits:2});
   document.getElementById('cf-pagato').textContent='\u20AC '+parseFloat(totP).toLocaleString('it-IT',{minimumFractionDigits:2});
