@@ -631,37 +631,145 @@ function renderDettaglio(){
   if(!x){container.innerHTML='<div class="empty">Preventivo non trovato.</div>';return;}
   var imp=parseFloat(x.imponibile||0),iva=imp*parseFloat(x.iva||22)/100;
   var voci=x.voci||[];
-  var voceHtml='';
-  if(voci.length){
-    var righe=voci.map(function(vv){
-      return '<tr><td>'+(vv.descrizione||'\u2014')+'</td>'+
-        '<td style="text-align:right">'+(vv.quantita!=null?vv.quantita:'')+'</td>'+
-        '<td>'+(vv.unita||'')+'</td>'+
-        '<td style="text-align:right">'+(vv.prezzo_unitario!=null?'\u20AC '+parseFloat(vv.prezzo_unitario).toLocaleString('it-IT',{minimumFractionDigits:2}):'\u2014')+'</td>'+
-        '<td style="text-align:right"><strong>'+(vv.totale!=null?'\u20AC '+parseFloat(vv.totale).toLocaleString('it-IT',{minimumFractionDigits:2}):'\u2014')+'</strong></td></tr>';
-    }).join('');
-    voceHtml='<div class="tbl-wrap"><table>'+
-      '<thead><tr><th>Descrizione</th><th style="text-align:right">Qt\u00E0</th><th>U.M.</th><th style="text-align:right">Prezzo unit.</th><th style="text-align:right">Totale</th></tr></thead>'+
-      '<tbody>'+righe+'</tbody>'+
-      '<tfoot>'+
-      '<tr><td colspan="4">Imponibile</td><td style="text-align:right">\u20AC '+parseFloat(imp).toLocaleString('it-IT',{minimumFractionDigits:2})+'</td></tr>'+
-      '<tr><td colspan="4">IVA ('+(x.iva||22)+'%)</td><td style="text-align:right">\u20AC '+parseFloat(iva).toLocaleString('it-IT',{minimumFractionDigits:2})+'</td></tr>'+
-      '<tr><td colspan="4"><strong>Totale con IVA</strong></td><td style="text-align:right"><strong>\u20AC '+parseFloat(imp+iva).toLocaleString('it-IT',{minimumFractionDigits:2})+'</strong></td></tr>'+
-      '</tfoot></table></div>';
-  } else {
-    voceHtml='<div class="alert info" style="margin-top:1rem"><i class="ti ti-info-circle"></i><span>Nessuna voce. Elimina il preventivo e ricaricalo con il PDF per estrarre le voci automaticamente.</span></div>';
-  }
-  container.innerHTML=
-    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:1.25rem">'+
+  var rate=x.rate||[];
+
+  var html='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:1.25rem">'+
     '<div class="metric"><div class="lbl">Professionista</div><div style="font-size:13px;font-weight:500;margin-top:4px">'+(x.professionista||'\u2014')+'</div></div>'+
     '<div class="metric"><div class="lbl">Data</div><div style="font-size:13px;font-weight:500;margin-top:4px">'+(x.data||'\u2014')+'</div></div>'+
     '<div class="metric"><div class="lbl">Imponibile</div><div style="font-size:13px;font-weight:500;margin-top:4px">\u20AC '+parseFloat(imp).toLocaleString('it-IT',{minimumFractionDigits:2})+'</div></div>'+
     '<div class="metric"><div class="lbl">Totale con IVA</div><div style="font-size:14px;font-weight:500;margin-top:4px">\u20AC '+parseFloat(imp+iva).toLocaleString('it-IT',{minimumFractionDigits:2})+'</div></div>'+
-    '</div>'+
-    (x.note?'<div style="font-size:13px;color:var(--text2);margin-bottom:1rem;padding:.75rem;background:var(--bg2);border-radius:var(--radius)">'+x.note+'</div>':'')+
-    '<div style="font-size:12px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.75rem">Voci di dettaglio ('+voci.length+')</div>'+
-    voceHtml;
+    '</div>';
+  if(x.note)html+='<div style="font-size:13px;color:var(--text2);margin-bottom:1.25rem;padding:.75rem;background:var(--bg2);border-radius:var(--radius)">'+x.note+'</div>';
+
+  // PIANO PAGAMENTI
+  html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">'+
+    '<div style="font-size:12px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.04em">Piano pagamenti ('+rate.length+' rate)</div>'+
+    '<button class="btn sm primary" onclick="openModalRata(\''+id+'\')"><i class="ti ti-plus"></i> Aggiungi rata</button>'+
+    '</div>';
+  if(rate.length){
+    var totRate=rate.reduce(function(s,r){return s+parseFloat(r.importo||0);},0);
+    var rateRows=rate.map(function(r,ri){
+      return '<tr>'+
+        '<td>'+(r.descrizione||'\u2014')+'</td>'+
+        '<td style="text-align:right">\u20AC '+parseFloat(r.importo||0).toLocaleString('it-IT',{minimumFractionDigits:2})+'</td>'+
+        '<td>'+(r.data||'\u2014')+'</td>'+
+        '<td><span class="badge '+bc(r.stato||'Da pagare')+'">'+(r.stato||'Da pagare')+'</span></td>'+
+        '<td><button class="icon-btn danger" onclick="deleteRata(\''+id+'\','+ri+')"><i class="ti ti-trash"></i></button></td></tr>';
+    }).join('');
+    html+='<div class="tbl-wrap" style="margin-bottom:1.25rem"><table>'+
+      '<thead><tr><th>Descrizione</th><th style="text-align:right">Importo</th><th>Data prevista</th><th>Stato</th><th></th></tr></thead>'+
+      '<tbody>'+rateRows+'</tbody>'+
+      '<tfoot><tr><td>Totale rate</td><td style="text-align:right"><strong>\u20AC '+parseFloat(totRate).toLocaleString('it-IT',{minimumFractionDigits:2})+'</strong></td><td colspan="3"></td></tr></tfoot>'+
+      '</table></div>';
+  } else {
+    html+='<div class="empty" style="padding:1rem;margin-bottom:1.25rem;border:.5px dashed var(--border2);border-radius:var(--radius)">Nessuna rata definita. Aggiungile con il pulsante sopra \u2014 vengono automaticamente aggiunte al piano pagamenti e al cashflow.</div>';
+  }
+
+  // VOCI DI DETTAGLIO
+  html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">'+
+    '<div style="font-size:12px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.04em">Voci di dettaglio ('+voci.length+')</div>'+
+    '<button class="btn sm" onclick="openModalVoce(\''+id+'\')"><i class="ti ti-plus"></i> Aggiungi voce</button>'+
+    '</div>';
+  if(voci.length){
+    var voceRows=voci.map(function(vv,vi){
+      return '<tr>'+
+        '<td>'+(vv.descrizione||'\u2014')+'</td>'+
+        '<td style="text-align:right">'+(vv.quantita!=null?vv.quantita:'')+'</td>'+
+        '<td>'+(vv.unita||'')+'</td>'+
+        '<td style="text-align:right">'+(vv.prezzo_unitario!=null?'\u20AC '+parseFloat(vv.prezzo_unitario).toLocaleString('it-IT',{minimumFractionDigits:2}):'\u2014')+'</td>'+
+        '<td style="text-align:right"><strong>'+(vv.totale!=null?'\u20AC '+parseFloat(vv.totale).toLocaleString('it-IT',{minimumFractionDigits:2}):'\u2014')+'</strong></td>'+
+        '<td><button class="icon-btn danger" onclick="deleteVoce(\''+id+'\','+vi+')"><i class="ti ti-trash"></i></button></td></tr>';
+    }).join('');
+    var totVoci=voci.reduce(function(s,vv){return s+parseFloat(vv.totale||0);},0);
+    html+='<div class="tbl-wrap"><table>'+
+      '<thead><tr><th>Descrizione</th><th style="text-align:right">Qt\u00E0</th><th>U.M.</th><th style="text-align:right">Prezzo unit.</th><th style="text-align:right">Totale</th><th></th></tr></thead>'+
+      '<tbody>'+voceRows+'</tbody>'+
+      '<tfoot>'+
+      '<tr><td colspan="4">Totale voci</td><td style="text-align:right">\u20AC '+parseFloat(totVoci).toLocaleString('it-IT',{minimumFractionDigits:2})+'</td><td></td></tr>'+
+      '<tr><td colspan="4">IVA ('+(x.iva||22)+'%)</td><td style="text-align:right">\u20AC '+parseFloat(imp*parseFloat(x.iva||22)/100).toLocaleString('it-IT',{minimumFractionDigits:2})+'</td><td></td></tr>'+
+      '<tr><td colspan="4"><strong>Totale con IVA</strong></td><td style="text-align:right"><strong>\u20AC '+parseFloat(imp+iva).toLocaleString('it-IT',{minimumFractionDigits:2})+'</strong></td><td></td></tr>'+
+      '</tfoot></table></div>';
+  } else {
+    html+='<div class="empty" style="padding:1rem;border:.5px dashed var(--border2);border-radius:var(--radius)">Nessuna voce. Aggiungile manualmente o ricarica il preventivo con il PDF.</div>';
+  }
+
+  container.innerHTML=html;
 }
+
+function openModalRata(prevId){
+  var x=DB.preventivi.find(function(p){return p.id===prevId;});
+  var imp=parseFloat(x&&x.imponibile||0),iva=imp*parseFloat(x&&x.iva||22)/100;
+  var tot=Math.round((imp+iva)*100)/100;
+  var statoOpts=STATI_PAG.map(function(s){return '<option>'+s+'</option>';}).join('');
+  document.getElementById('modal-content').innerHTML=
+    '<h3>Aggiungi rata di pagamento</h3>'+
+    '<div class="alert info" style="margin-bottom:1rem"><i class="ti ti-info-circle"></i>'+
+    '<span>Totale preventivo con IVA: <strong>\u20AC '+parseFloat(tot).toLocaleString('it-IT',{minimumFractionDigits:2})+'</strong>. La rata viene aggiunta anche al piano pagamenti.</span></div>'+
+    '<div class="frow"><label>Descrizione</label><input id="r-desc" placeholder="es. 20% inizio lavori"></div>'+
+    '<div class="frow c3">'+
+    '<div><label>% sul totale</label><input id="r-pct" type="number" step="1" min="0" max="100" placeholder="es. 20" oninput="document.getElementById(\'r-imp\').value=('+tot+'*parseFloat(this.value||0)/100).toFixed(2)"></div>'+
+    '<div><label>Importo (\u20AC)</label><input id="r-imp" type="number" step="0.01" placeholder="0.00"></div>'+
+    '<div><label>Data prevista</label><input id="r-data" type="date"></div>'+
+    '</div>'+
+    '<div class="frow"><label>Stato</label><select id="r-stato">'+statoOpts+'</select></div>'+
+    '<div class="btn-row">'+
+    '<button class="btn" onclick="closeModal()">Annulla</button>'+
+    '<button class="btn primary" onclick="saveRata(\''+prevId+'\')">Aggiungi</button>'+
+    '</div>';
+  openModal();
+}
+
+function saveRata(prevId){
+  var x=DB.preventivi.find(function(p){return p.id===prevId;});
+  if(!x)return;
+  if(!x.rate)x.rate=[];
+  var rata={descrizione:v('r-desc'),importo:v('r-imp'),data:v('r-data'),stato:v('r-stato')};
+  x.rate.push(rata);
+  DB.pagamenti.push({id:uid(),prevId:prevId,categoria:x.categoria,professionista:x.professionista,
+    data:rata.data,importo:rata.importo,tipo:'Acconto',riferimento:'',stato:rata.stato,note:rata.descrizione});
+  saveDB();closeModal();renderDettaglio();
+}
+
+function deleteRata(prevId,idx){
+  var x=DB.preventivi.find(function(p){return p.id===prevId;});
+  if(!x||!x.rate)return;
+  if(confirm('Eliminare questa rata?')){x.rate.splice(idx,1);saveDB();renderDettaglio();}
+}
+
+function openModalVoce(prevId){
+  document.getElementById('modal-content').innerHTML=
+    '<h3>Aggiungi voce di dettaglio</h3>'+
+    '<div class="frow"><label>Descrizione</label><input id="v-desc" placeholder="es. Punto presa universale 16A 2P+T"></div>'+
+    '<div class="frow c3">'+
+    '<div><label>Quantit\u00E0</label><input id="v-qty" type="number" step="0.01" placeholder="0"></div>'+
+    '<div><label>U.M.</label><input id="v-um" placeholder="es. cad, m, m2"></div>'+
+    '<div><label>Prezzo unitario (\u20AC)</label><input id="v-pu" type="number" step="0.01" placeholder="0.00"></div>'+
+    '</div>'+
+    '<div class="frow"><label>Totale riga (\u20AC) \u2014 calcolato automaticamente se lasci vuoto</label><input id="v-tot" type="number" step="0.01" placeholder="0.00"></div>'+
+    '<div class="btn-row">'+
+    '<button class="btn" onclick="closeModal()">Annulla</button>'+
+    '<button class="btn primary" onclick="saveVoce(\''+prevId+'\')">Aggiungi</button>'+
+    '</div>';
+  openModal();
+}
+
+function saveVoce(prevId){
+  var x=DB.preventivi.find(function(p){return p.id===prevId;});
+  if(!x)return;
+  if(!x.voci)x.voci=[];
+  var qty=v('v-qty'),pu=v('v-pu'),tot=v('v-tot');
+  if(!tot&&qty&&pu)tot=String(Math.round(parseFloat(qty)*parseFloat(pu)*100)/100);
+  x.voci.push({descrizione:v('v-desc'),quantita:qty?parseFloat(qty):null,unita:v('v-um'),
+    prezzo_unitario:pu?parseFloat(pu):null,totale:tot?parseFloat(tot):null});
+  saveDB();closeModal();renderDettaglio();
+}
+
+function deleteVoce(prevId,idx){
+  var x=DB.preventivi.find(function(p){return p.id===prevId;});
+  if(!x||!x.voci)return;
+  if(confirm('Eliminare questa voce?')){x.voci.splice(idx,1);saveDB();renderDettaglio();}
+}
+
 
 // ---
 function renderPagamenti(){
