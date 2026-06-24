@@ -109,6 +109,18 @@ tfoot td{font-weight:500;background:var(--bg2);border-top:.5px solid var(--borde
 /* MOBILE CARDS */
 .prev-cards{display:none}
 .prev-table{display:block}
+/* TIPO BADGES */
+.tipo-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;white-space:nowrap;border:.5px solid transparent}
+.tipo-elettricista{background:#E8F0FE;color:#1A56DB}
+.tipo-idraulico{background:#E0F2FE;color:#0369A1}
+.tipo-termotecnico{background:#FEF3C7;color:#92400E}
+.tipo-muratore{background:#F3F4F6;color:#374151}
+.tipo-falegname{background:#FDF4FF;color:#7E22CE}
+.tipo-pittore{background:#F0FDF4;color:#166534}
+.tipo-serramentista{background:#FFF7ED;color:#C2410C}
+.tipo-geometra{background:#EFF6FF;color:#1D4ED8}
+.tipo-architetto{background:#F5F3FF;color:#6D28D9}
+.tipo-altro{background:#F9FAFB;color:#6B7280}
 /* DRIVE */
 .drive-dot{width:7px;height:7px;border-radius:50%;background:var(--text3);display:inline-block;margin-right:4px}
 .drive-dot.ok{background:var(--green)}
@@ -254,6 +266,7 @@ const SCOPES='https://www.googleapis.com/auth/drive.file';
 const DRIVE_FILE_NAME='preventivi_ristrutturazione_data.json';
 const DRIVE_FOLDER_ID='1ngCmFkcxf5fK0w_FtSHdUqoAcwEdrx6n';
 const MESI=['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+const TIPI_PROF=['Elettricista','Idraulico','Termotecnico','Muratore','Falegname','Pittore','Serramentista','Geometra','Architetto','Altro'];
 const STATI_PREV=['In valutazione','Accettato','Da richiedere','Rifiutato'];
 const STATI_PAG=['Da pagare','Pagato','Parziale'];
 const TIPI_PAG=['Anticipo','SAL','Saldo','Acconto'];
@@ -426,6 +439,7 @@ function renderPreventivi(){
   p.forEach(function(x){
     var imp=parseFloat(x.imponibile||0),iva=imp*parseFloat(x.iva||22)/100;
     rows+='<tr>'+
+      '<td>'+(x.tipo?'<span class="tipo-badge tipo-'+(x.tipo).toLowerCase()+'">'+x.tipo+'</span>':'—')+'</td>'+
       '<td><strong>'+(x.categoria||'\u2014')+'</strong></td>'+
       '<td>'+(x.professionista||'\u2014')+'</td>'+
       '<td>'+(x.data||'\u2014')+'</td>'+
@@ -442,7 +456,7 @@ function renderPreventivi(){
   document.getElementById('table-preventivi').innerHTML=
     '<div class="prev-cards">'+cards+'<div style="padding:.5rem 0;font-size:13px;color:var(--text2);text-align:right;border-top:.5px solid var(--border)">Totale: <strong>\u20AC '+parseFloat(totAll).toLocaleString('it-IT',{minimumFractionDigits:2})+'</strong></div></div>'+
     '<div class="prev-table"><div class="tbl-wrap"><table>'+
-    '<thead><tr><th>Categoria</th><th>Professionista</th><th>Data</th><th style="text-align:right">Imponibile</th><th style="text-align:right">IVA</th><th style="text-align:right">Totale</th><th>Stato</th><th></th></tr></thead>'+
+    '<thead><tr><th>Tipo</th><th>Categoria</th><th>Professionista</th><th>Data</th><th style="text-align:right">Imponibile</th><th style="text-align:right">IVA</th><th style="text-align:right">Totale</th><th>Stato</th><th></th></tr></thead>'+
     '<tbody>'+rows+'</tbody>'+
     '<tfoot><tr><td colspan="3">Totale generale</td><td></td><td></td><td style="text-align:right">\u20AC '+parseFloat(totAll).toLocaleString('it-IT',{minimumFractionDigits:2})+'</td><td colspan="2"></td></tr></tfoot>'+
     '</table></div></div>';
@@ -474,7 +488,10 @@ function openModalPreventivo(id){
   document.getElementById('modal-content').innerHTML=
     '<h3>'+(x?'Modifica preventivo':'Nuovo preventivo')+'</h3>'+
     uploadHtml+
-    '<div class="frow c2"><div><label>Categoria lavori</label><input id="f-cat" value="'+(x&&x.categoria||'')+'" placeholder="es. Impianto idraulico"></div>'+
+    '<div class="frow c3">'+
+    '<div><label>Professionista / Azienda</label><input id="f-prof" value="'+(x&&x.professionista||'')+'" placeholder="es. Idraulica Rossi Srl"></div></div>'+
+    '<select id="f-tipo">'+TIPI_PROF.map(function(t){return '<option value="'+t+'"'+((x&&x.tipo||'Altro')===t?' selected':'')+'>'+t+'</option>';}).join('')+'</select></div>'+
+    '<div><label>Categoria lavori</label><input id="f-cat" value="'+(x&&x.categoria||'')+'" placeholder="es. Impianto idraulico"></div>'+
     '<div><label>Professionista / Azienda</label><input id="f-prof" value="'+(x&&x.professionista||'')+'" placeholder="es. Idraulica Rossi Srl"></div></div>'+
     '<div class="frow c3"><div><label>Data preventivo</label><input id="f-data" type="date" value="'+(x&&x.data||'')+'"></div>'+
     '<div><label>Imponibile (\u20AC)</label><input id="f-imp" type="number" step="0.01" value="'+(x&&x.imponibile||'')+'" placeholder="0.00"></div>'+
@@ -489,7 +506,7 @@ function openModalPreventivo(id){
 
 function savePreventivo(id){
   var existing=id?DB.preventivi.find(function(p){return p.id===id;}):null;
-  var obj={id:id||uid(),categoria:v('f-cat'),professionista:v('f-prof'),data:v('f-data'),
+  var obj={id:id||uid(),tipo:v('f-tipo'),categoria:v('f-cat'),professionista:v('f-prof'),data:v('f-data'),
     imponibile:v('f-imp'),iva:v('f-iva'),stato:v('f-stato'),scadenza:v('f-scad'),note:v('f-note'),
     voci:(existing&&existing.voci)||window._pendingVoci||[]};
   window._pendingVoci=null;
