@@ -164,6 +164,7 @@ tfoot td{font-weight:500;background:var(--bg2);border-top:.5px solid var(--borde
 .drawer-item.active{background:var(--blue-bg);color:var(--blue-text);font-weight:500}
 .drawer-item i{font-size:18px;width:22px;text-align:center}
 @media(max-width:680px){
+  .sync-text{display:none}
   .hamburger{display:inline-flex;align-items:center}
   .tabs{display:none}
 }
@@ -264,6 +265,18 @@ tfoot td{font-weight:500;background:var(--bg2);border-top:.5px solid var(--borde
         <div class="metric"><div class="lbl">Già pagato</div><div class="val" id="cf-pagato">—</div></div>
       </div>
       <div class="card"><div class="card-header"><h3>Uscite per mese</h3></div><div id="cashflow-table"></div></div>
+      <div class="card" style="margin-top:0">
+        <div class="card-header">
+          <h3>Prossime scadenze</h3>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="btn sm" id="cf-btn-2" onclick="setCfPeriod(2)">2 mesi</button>
+            <button class="btn sm active primary" id="cf-btn-3" onclick="setCfPeriod(3)">3 mesi</button>
+            <button class="btn sm" id="cf-btn-6" onclick="setCfPeriod(6)">6 mesi</button>
+            <button class="btn sm" id="cf-btn-12" onclick="setCfPeriod(12)">12 mesi</button>
+          </div>
+        </div>
+        <div id="scadenze-table"></div>
+      </div>
     </div>
 
     <!-- RICONCILIAZIONE -->
@@ -396,7 +409,7 @@ function saveDB(){clearTimeout(saveTimer);saveTimer=setTimeout(saveToDrive,1500)
 function setSyncLabel(state,text){
   const el=document.getElementById('sync-label');
   const dot={'ok':'ok','saving':'saving','error':'error','loading':'saving'}[state]||'';
-  el.innerHTML='<span class="drive-dot '+dot+'"></span>'+text;
+  el.innerHTML='<span class="drive-dot '+dot+'"></span><span class="sync-text"> '+text+'</span>';
 }
 
 // ---
@@ -946,6 +959,83 @@ function renderCashflow(){
       '</div>';
   });
   document.getElementById('cashflow-table').innerHTML=html;
+  renderScadenze(window._cfPeriod||3);
+}
+
+window._cfPeriod=3;
+
+function setCfPeriod(months){
+  window._cfPeriod=months;
+  [2,3,6,12].forEach(function(m){
+    var btn=document.getElementById('cf-btn-'+m);
+    if(btn){btn.className='btn sm'+(m===months?' primary active':'');}
+  });
+  renderScadenze(months);
+}
+
+function renderScadenze(months){
+  var container=document.getElementById('scadenze-table');
+  if(!container)return;
+  var now=new Date();
+  now.setHours(0,0,0,0);
+  var future=new Date(now);
+  future.setMonth(future.getMonth()+months);
+  // Filter pagamenti with date in range and not yet paid
+  var pg=DB.pagamenti.filter(function(x){
+    if(!x.data)return false;
+    var d=new Date(x.data);
+    return d>=now && d<=future;
+  }).sort(function(a,b){return new Date(a.data)-new Date(b.data);});
+  if(!pg.length){
+    container.innerHTML='<div class="empty">Nessuna scadenza nei prossimi '+months+' mesi.</div>';
+    return;
+  }
+  var tot=pg.reduce(function(s,x){return s+parseFloat(x.importo||0);},0);
+  var totDaPagare=pg.filter(function(x){return x.stato!=='Pagato';}).reduce(function(s,x){return s+parseFloat(x.importo||0);},0);
+  // Group by month for summary
+  var byM={};
+  pg.forEach(function(x){
+    var d=new Date(x.data);
+    var k=d.getFullYear()+'-'+(d.getMonth()+1<10?'0':'')+(d.getMonth()+1);
+    if(!byM[k])byM[k]=[];
+    byM[k].push(x);
+  });
+  var MESI_IT=['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+  var rows='';
+  Object.keys(byM).sort().forEach(function(k){
+    var parts=k.split('-'),y=parts[0],mo=parseInt(parts[1]);
+    var label=MESI_IT[mo-1]+' '+y;
+    var mTot=byM[k].reduce(function(s,x){return s+parseFloat(x.importo||0);},0);
+    // Month header row
+    rows+='<tr style="background:var(--bg2)">'+
+      '<td colspan="4" style="font-weight:500;font-size:12px;color:var(--text2);padding:6px 10px">'+label+'</td>'+
+      '<td style="text-align:right;font-weight:500;font-size:12px;padding:6px 10px">'+'\u20AC '+parseFloat(mTot).toLocaleString('it-IT',{minimumFractionDigits:2})+'</td>'+
+      '<td></td></tr>';
+    byM[k].forEach(function(x){
+      var prev=DB.preventivi.find(function(p){return p.id===x.prevId;});
+      var dStr=new Date(x.data).toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit'});
+      var isPast=new Date(x.data)<now;
+      var isToday=new Date(x.data).toDateString()===now.toDateString();
+      var dayDiff=Math.round((new Date(x.data)-now)/(1000*60*60*24));
+      var scadLabel=isToday?'Oggi':dayDiff<=7?'Fra '+dayDiff+' gg':'';
+      rows+='<tr>'+
+        '<td style="padding-left:20px;font-size:13px">'+(prev&&prev.categoria||x.categoria||'\u2014')+'</td>'+
+        '<td style="font-size:13px">'+(prev&&prev.professionista||x.professionista||'\u2014')+'</td>'+
+        '<td style="font-size:12px;color:var(--text2)">'+dStr+(scadLabel?'<span style="margin-left:6px;color:var(--amber);font-weight:500;font-size:11px">'+scadLabel+'</span>':'')+'</td>'+
+        '<td><span class="badge '+bc(x.stato)+'">'+x.stato+'</span></td>'+
+        '<td style="text-align:right;font-weight:500">'+'\u20AC '+parseFloat(x.importo||0).toLocaleString('it-IT',{minimumFractionDigits:2})+'</td>'+
+        '<td style="font-size:11px;color:var(--text3)">'+(x.note||x.tipo||'')+'</td>'+
+        '</tr>';
+    });
+  });
+  container.innerHTML='<div class="tbl-wrap"><table>'+
+    '<thead><tr><th>Categoria</th><th>Professionista</th><th>Data</th><th>Stato</th><th style="text-align:right">Importo</th><th>Note</th></tr></thead>'+
+    '<tbody>'+rows+'</tbody>'+
+    '<tfoot><tr>'+
+    '<td colspan="4">Totale periodo · Da pagare</td>'+
+    '<td style="text-align:right"><strong>\u20AC '+parseFloat(tot).toLocaleString('it-IT',{minimumFractionDigits:2})+'</strong> <span style="color:var(--amber);font-size:12px">(\u20AC '+parseFloat(totDaPagare).toLocaleString('it-IT',{minimumFractionDigits:2})+' da pagare)</span></td>'+
+    '<td></td></tr></tfoot>'+
+    '</table></div>';
 }
 
 // ---
