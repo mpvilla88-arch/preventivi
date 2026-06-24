@@ -523,10 +523,13 @@ function renderImpostazioni(){
   if(!list)return;
   if(!tipi.length){list.innerHTML='<div class="empty">Nessun tipo. Aggiungine uno sotto.</div>';return;}
   list.innerHTML=tipi.map(function(t,i){
+    var nome=typeof t==='string'?t:t.nome;
     return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:.5px solid var(--border)">'+
-      tipoBadge(t)+
+      tipoBadge(nome)+
+      '<div class="action-icons">'+
+      '<button class="icon-btn" onclick="editTipo('+i+')" title="Modifica"><i class="ti ti-edit"></i></button>'+
       '<button class="icon-btn danger" onclick="removeTipo('+i+')" title="Rimuovi"><i class="ti ti-trash"></i></button>'+
-      '</div>';
+      '</div></div>';
   }).join('');
 }
 
