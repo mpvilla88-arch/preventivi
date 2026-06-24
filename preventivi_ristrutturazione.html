@@ -149,21 +149,30 @@ tfoot td{font-weight:500;background:var(--bg2);border-top:.5px solid var(--borde
 
 /* MOBILE RESPONSIVE TABLES */
 .table-wrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+
+/* Cards: shown on mobile, hidden on desktop */
+.prev-cards-wrap{display:none}
+.prev-table-wrap{display:block}
+
+/* Table: hidden on mobile, shown on desktop */
 @media(max-width:680px){
+  .prev-cards-wrap{display:block}
+  .prev-table-wrap{display:none}
   .grid4{grid-template-columns:1fr 1fr}
-  .topbar-title span.title-text{display:none}
-  /* Card list for preventivi on mobile */
-  .prev-card{background:var(--bg);border:.5px solid var(--border);border-radius:var(--radius);padding:1rem;margin-bottom:.75rem}
-  .prev-card .pc-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.5rem}
-  .prev-card .pc-cat{font-weight:500;font-size:14px}
-  .prev-card .pc-prof{font-size:13px;color:var(--text2);margin-bottom:.4rem}
-  .prev-card .pc-row{display:flex;justify-content:space-between;align-items:center;font-size:13px}
-  .prev-card .pc-tot{font-weight:500;font-size:15px}
-  /* Dettaglio voci mobile */
-  .voce-card{border:.5px solid var(--border);border-radius:var(--radius);padding:.75rem;margin-bottom:.5rem;font-size:13px}
-  .voce-card .vc-desc{font-weight:500;margin-bottom:4px}
-  .voce-card .vc-row{display:flex;justify-content:space-between;color:var(--text2);font-size:12px}
+  .grid2{grid-template-columns:1fr}
+  .cf-row{grid-template-columns:60px 1fr 80px}
+  .tabs{flex-wrap:wrap}
+  .tab{padding:5px 10px;font-size:12px}
+  .wrap{padding:1rem}
 }
+
+/* Card styles */
+.prev-card{background:var(--bg2);border:.5px solid var(--border);border-radius:var(--radius);padding:1rem;margin-bottom:.75rem}
+.prev-card .pc-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.5rem;gap:.5rem}
+.prev-card .pc-cat{font-weight:500;font-size:14px}
+.prev-card .pc-prof{font-size:13px;color:var(--text2);margin-top:2px}
+.prev-card .pc-row{display:flex;justify-content:space-between;align-items:center;margin-top:.4rem}
+.prev-card .pc-tot{font-weight:500;font-size:15px}
 /* Dettaglio voci desktop */
 .voci-table{width:100%;border-collapse:collapse;font-size:13px}
 .voci-table th{text-align:left;font-weight:500;padding:7px 10px;border-bottom:.5px solid var(--border);color:var(--text2);font-size:11px;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
@@ -532,59 +541,59 @@ function renderPreventivi() {
     document.getElementById('table-preventivi').innerHTML = '<div class="empty">Nessun preventivo. Usa "Nuovo preventivo" per iniziare.</div>';
     return;
   }
-  const isMobile = window.innerWidth < 680;
   const totAll = p.reduce((s,x) => s + parseFloat(x.imponibile||0)*(1+parseFloat(x.iva||22)/100), 0);
 
-  if (isMobile) {
-    let cards = '';
-    p.forEach(x => {
-      const imp = parseFloat(x.imponibile||0), iva = imp * parseFloat(x.iva||22)/100;
-      cards += `<div class="prev-card">
-        <div class="pc-head">
-          <div>
-            <div class="pc-cat">${x.categoria||'—'}</div>
-            <div class="pc-prof">${x.professionista||'—'}</div>
-          </div>
-          <span class="badge ${bc(x.stato)}">${x.stato}</span>
+  // Mobile cards (shown via CSS on small screens)
+  let cards = '';
+  p.forEach(x => {
+    const imp = parseFloat(x.imponibile||0), iva = imp * parseFloat(x.iva||22)/100;
+    cards += `<div class="prev-card">
+      <div class="pc-head">
+        <div>
+          <div class="pc-cat">${x.categoria||'—'}</div>
+          <div class="pc-prof">${x.professionista||'—'}</div>
         </div>
-        <div class="pc-row">
-          <span style="color:var(--text2)">${x.data||'—'} · IVA ${x.iva||22}%</span>
-          <span class="pc-tot">${fmt(imp+iva)}</span>
-        </div>
-        <div style="display:flex;gap:6px;margin-top:.6rem;justify-content:flex-end">
-          <button class="btn sm" onclick="openModalPreventivo('${x.id}')"><i class="ti ti-edit"></i> Modifica</button>
-          <button class="btn sm" onclick="showTab('dettaglio');setTimeout(()=>{document.getElementById('dettaglio-select').value='${x.id}';renderDettaglio()},50)"><i class="ti ti-list"></i> Dettaglio</button>
-          <button class="btn sm danger" onclick="deleteItem('preventivi','${x.id}',renderPreventivi)"><i class="ti ti-trash"></i></button>
-        </div>
-      </div>`;
-    });
-    cards += `<div style="padding:.75rem 0;font-size:13px;color:var(--text2);text-align:right">Totale generale: <strong>${fmt(totAll)}</strong></div>`;
-    document.getElementById('table-preventivi').innerHTML = cards;
-  } else {
-    let rows = '';
-    p.forEach(x => {
-      const imp = parseFloat(x.imponibile||0), iva = imp * parseFloat(x.iva||22)/100;
-      rows += `<tr>
-        <td><strong>${x.categoria||'—'}</strong></td>
-        <td>${x.professionista||'—'}</td>
-        <td>${x.data||'—'}</td>
-        <td style="text-align:right">${fmt(imp)}</td>
-        <td style="text-align:right">${x.iva||22}%</td>
-        <td style="text-align:right"><strong>${fmt(imp+iva)}</strong></td>
-        <td><span class="badge ${bc(x.stato)}">${x.stato}</span></td>
-        <td><div class="action-icons">
-          <button class="icon-btn" onclick="openModalPreventivo('${x.id}')"><i class="ti ti-edit"></i></button>
-          <button class="icon-btn" onclick="showTab('dettaglio');setTimeout(()=>{document.getElementById('dettaglio-select').value='${x.id}';renderDettaglio()},50)" title="Vedi dettaglio"><i class="ti ti-list"></i></button>
-          <button class="icon-btn danger" onclick="deleteItem('preventivi','${x.id}',renderPreventivi)"><i class="ti ti-trash"></i></button>
-        </div></td></tr>`;
-    });
-    document.getElementById('table-preventivi').innerHTML = `<div class="table-wrap"><table>
+        <span class="badge ${bc(x.stato)}">${x.stato}</span>
+      </div>
+      <div class="pc-row">
+        <span style="color:var(--text2);font-size:12px">${x.data||'—'} · IVA ${x.iva||22}%</span>
+        <span class="pc-tot">${fmt(imp+iva)}</span>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:.6rem;justify-content:flex-end">
+        <button class="btn sm" onclick="openModalPreventivo('${x.id}')"><i class="ti ti-edit"></i> Modifica</button>
+        <button class="btn sm" onclick="showTab('dettaglio');setTimeout(()=>{document.getElementById('dettaglio-select').value='${x.id}';renderDettaglio()},50)"><i class="ti ti-list"></i> Dettaglio</button>
+        <button class="btn sm danger" onclick="deleteItem('preventivi','${x.id}',renderPreventivi)"><i class="ti ti-trash"></i></button>
+      </div>
+    </div>`;
+  });
+  cards += `<div style="padding:.75rem 0;font-size:13px;color:var(--text2);text-align:right;border-top:.5px solid var(--border)">Totale: <strong>${fmt(totAll)}</strong></div>`;
+
+  // Desktop table
+  let rows = '';
+  p.forEach(x => {
+    const imp = parseFloat(x.imponibile||0), iva = imp * parseFloat(x.iva||22)/100;
+    rows += `<tr>
+      <td><strong>${x.categoria||'—'}</strong></td>
+      <td>${x.professionista||'—'}</td>
+      <td>${x.data||'—'}</td>
+      <td style="text-align:right">${fmt(imp)}</td>
+      <td style="text-align:right">${x.iva||22}%</td>
+      <td style="text-align:right"><strong>${fmt(imp+iva)}</strong></td>
+      <td><span class="badge ${bc(x.stato)}">${x.stato}</span></td>
+      <td><div class="action-icons">
+        <button class="icon-btn" onclick="openModalPreventivo('${x.id}')"><i class="ti ti-edit"></i></button>
+        <button class="icon-btn" onclick="showTab('dettaglio');setTimeout(()=>{document.getElementById('dettaglio-select').value='${x.id}';renderDettaglio()},50)" title="Dettaglio"><i class="ti ti-list"></i></button>
+        <button class="icon-btn danger" onclick="deleteItem('preventivi','${x.id}',renderPreventivi)"><i class="ti ti-trash"></i></button>
+      </div></td></tr>`;
+  });
+
+  document.getElementById('table-preventivi').innerHTML =
+    `<div class="prev-cards-wrap">${cards}</div>` +
+    `<div class="prev-table-wrap"><div class="table-wrap"><table>
       <thead><tr><th>Categoria</th><th>Professionista</th><th>Data</th><th style="text-align:right">Imponibile</th><th style="text-align:right">IVA</th><th style="text-align:right">Totale</th><th>Stato</th><th></th></tr></thead>
       <tbody>${rows}</tbody>
       <tfoot><tr><td colspan="3">Totale generale</td><td></td><td></td><td style="text-align:right">${fmt(totAll)}</td><td colspan="2"></td></tr></tfoot>
-    </table></div>`;
-  }
-}
+    </table></div></div>`;
 
 function openModalPreventivo(id) {
   const x = id ? DB.preventivi.find(p => p.id === id) : null;
@@ -946,11 +955,10 @@ function renderDettaglio() {
   const imp = parseFloat(x.imponibile||0);
   const iva = imp * parseFloat(x.iva||22)/100;
   const voci = x.voci || [];
-  const isMobile = window.innerWidth < 680;
-
   let voceHtml = '';
   if (voci.length) {
-    if (isMobile) {
+    // Always render table, CSS handles mobile
+    if (false) {
       voceHtml = voci.map(v => `
         <div class="voce-card">
           <div class="vc-desc">${v.descrizione||'—'}</div>
