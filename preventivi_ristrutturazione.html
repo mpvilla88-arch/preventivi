@@ -763,7 +763,10 @@ function renderDettaglio(){
         '<td style="text-align:right">\u20AC '+parseFloat(r.importo||0).toLocaleString('it-IT',{minimumFractionDigits:2})+'</td>'+
         '<td>'+(r.data||'\u2014')+'</td>'+
         '<td><span class="badge '+bc(r.stato||'Da pagare')+'">'+(r.stato||'Da pagare')+'</span></td>'+
-        '<td><button class="icon-btn danger" onclick="deleteRata(\''+id+'\','+ri+')"><i class="ti ti-trash"></i></button></td></tr>';
+        '<td><div class="action-icons">'+
+        (r.stato==='Pagato'?'<button class="icon-btn" disabled title="Rata pagata: non modificabile" style="opacity:.3;cursor:not-allowed"><i class="ti ti-edit"></i></button>':'<button class="icon-btn" onclick="openModalRata(\''+id+'\','+ri+')"><i class="ti ti-edit"></i></button>')+
+        '<button class="icon-btn danger" onclick="deleteRata(\''+id+'\','+ri+')" '+(r.stato==='Pagato'?'disabled style="opacity:.3;cursor:not-allowed" title="Rata pagata: non eliminabile"':'')+'><i class="ti ti-trash"></i></button>'+
+        '</div></td></tr>';
     }).join('');
     html+='<div class="tbl-wrap" style="margin-bottom:1.25rem"><table>'+
       '<thead><tr><th>Descrizione</th><th style="text-align:right">Importo</th><th>Data prevista</th><th>Stato</th><th></th></tr></thead>'+
@@ -805,37 +808,56 @@ function renderDettaglio(){
   container.innerHTML=html;
 }
 
-function openModalRata(prevId){
+function openModalRata(prevId,rataIdx){
   var x=DB.preventivi.find(function(p){return p.id===prevId;});
+  var editMode=rataIdx!==undefined;
+  var rata=editMode&&x.rate?x.rate[rataIdx]:null;
+  if(editMode&&rata&&rata.stato==='Pagato'){flash('Questa rata è già stata pagata e non può essere modificata.','warning');return;}
   var imp=parseFloat(x&&x.imponibile||0),iva=imp*parseFloat(x&&x.iva||22)/100;
   var tot=Math.round((imp+iva)*100)/100;
   var statoOpts=STATI_PAG.map(function(s){return '<option>'+s+'</option>';}).join('');
   document.getElementById('modal-content').innerHTML=
-    '<h3>Aggiungi rata di pagamento</h3>'+
+    '<h3>'+(editMode?'Modifica rata':'Aggiungi rata di pagamento')+'</h3>'+
     '<div class="alert info" style="margin-bottom:1rem"><i class="ti ti-info-circle"></i>'+
-    '<span>Totale preventivo con IVA: <strong>\u20AC '+parseFloat(tot).toLocaleString('it-IT',{minimumFractionDigits:2})+'</strong>. La rata viene aggiunta anche al piano pagamenti.</span></div>'+
-    '<div class="frow"><label>Descrizione</label><input id="r-desc" placeholder="es. 20% inizio lavori"></div>'+
+    '<span>Totale preventivo con IVA: <strong>\u20AC '+parseFloat(tot).toLocaleString('it-IT',{minimumFractionDigits:2})+'</strong>.</span></div>'+
+    '<div class="frow"><label>Descrizione</label><input id="r-desc" value="'+(rata&&rata.descrizione||'')+'" placeholder="es. 20% inizio lavori"></div>'+
     '<div class="frow c3">'+
     '<div><label>% sul totale</label><input id="r-pct" type="number" step="1" min="0" max="100" placeholder="es. 20" oninput="document.getElementById(\'r-imp\').value=('+tot+'*parseFloat(this.value||0)/100).toFixed(2)"></div>'+
-    '<div><label>Importo (\u20AC)</label><input id="r-imp" type="number" step="0.01" placeholder="0.00"></div>'+
-    '<div><label>Data prevista</label><input id="r-data" type="date"></div>'+
+    '<div><label>Importo (\u20AC)</label><input id="r-imp" type="number" step="0.01" value="'+(rata&&rata.importo||'')+'" placeholder="0.00"></div>'+
+    '<div><label>Data prevista</label><input id="r-data" type="date" value="'+(rata&&rata.data||'')+'"</div>'+
     '</div>'+
-    '<div class="frow"><label>Stato</label><select id="r-stato">'+statoOpts+'</select></div>'+
+    '<div class="frow"><label>Stato</label><select id="r-stato">'+STATI_PAG.map(function(s){return '<option'+(rata&&rata.stato===s?' selected':'')+'>'+s+'</option>';}).join('')+'</select></div>'+
     '<div class="btn-row">'+
     '<button class="btn" onclick="closeModal()">Annulla</button>'+
-    '<button class="btn primary" onclick="saveRata(\''+prevId+'\')">Aggiungi</button>'+
+    '<button class="btn primary" onclick="saveRata(\''+prevId+'\','+(editMode?rataIdx:'undefined')+')">'+( editMode?'Salva':'Aggiungi')+'</button>'+
     '</div>';
   openModal();
 }
 
-function saveRata(prevId){
+function saveRata(prevId,rataIdx){
   var x=DB.preventivi.find(function(p){return p.id===prevId;});
   if(!x)return;
   if(!x.rate)x.rate=[];
   var rata={descrizione:v('r-desc'),importo:v('r-imp'),data:v('r-data'),stato:v('r-stato')};
-  x.rate.push(rata);
-  DB.pagamenti.push({id:uid(),prevId:prevId,categoria:x.categoria,professionista:x.professionista,
-    data:rata.data,importo:rata.importo,tipo:'Acconto',riferimento:'',stato:rata.stato,note:rata.descrizione});
+  if(rataIdx!==undefined){
+    var oldRata=x.rate[rataIdx];
+    x.rate[rataIdx]=rata;
+    // Sync linked pagamento: find by matching descrizione+prevId and update it
+    var pag=DB.pagamenti.find(function(p){
+      return p.prevId===prevId && p.note===oldRata.descrizione && p.importo==oldRata.importo;
+    });
+    if(pag){
+      pag.data=rata.data;
+      pag.importo=rata.importo;
+      pag.stato=rata.stato;
+      pag.note=rata.descrizione;
+    }
+  } else {
+    // Add mode: push new rata and create linked pagamento
+    x.rate.push(rata);
+    DB.pagamenti.push({id:uid(),prevId:prevId,categoria:x.categoria,professionista:x.professionista,
+      data:rata.data,importo:rata.importo,tipo:'Acconto',riferimento:'',stato:rata.stato,note:rata.descrizione});
+  }
   saveDB();closeModal();renderDettaglio();
 }
 
