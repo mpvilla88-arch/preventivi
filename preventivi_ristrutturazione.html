@@ -496,12 +496,11 @@ function renderPreventivi(){
   p.forEach(function(x){
     var imp=parseFloat(x.imponibile||0),iva=imp*parseFloat(x.iva||22)/100;
     rows+='<tr>'+
-      '<td>'+(x.tipo?'<span class="tipo-badge tipo-'+(x.tipo).toLowerCase()+'">'+x.tipo+'</span>':'—')+'</td>'+
-      '<td>'+(x.tipo?'<span class="tipo-badge tipo-'+x.tipo.toLowerCase()+'">'+x.tipo+'</span>':'—')+'</td>'+
+      '<td>'+(x.tipo?'<span class="tipo-badge tipo-'+x.tipo.toLowerCase()+'">'+x.tipo+'</span>':'\u2014')+'</td>'+
       '<td><strong>'+(x.categoria||'\u2014')+'</strong></td>'+
       '<td>'+(x.professionista||'\u2014')+'</td>'+
       '<td>'+(x.data?x.data.split('-').reverse().slice(0,2).join('/'):'-')+'</td>'+
-      '<td style="text-align:right"><strong>\u20AC '+parseFloat(imp+iva).toLocaleString('it-IT',{minimumFractionDigits:2})+'</strong><div style="font-size:10px;color:var(--text2)">imp. \u20AC '+parseFloat(imp).toLocaleString('it-IT',{minimumFractionDigits:2})+'</div></td>'+
+      '<td style="text-align:right"><strong>\u20AC '+parseFloat(imp+iva).toLocaleString('it-IT',{minimumFractionDigits:2})+'</strong><br><span style="font-size:10px;color:var(--text2)">imp. \u20AC '+parseFloat(imp).toLocaleString('it-IT',{minimumFractionDigits:2})+'</span></td>'+
       '<td><span class="badge '+bc(x.stato)+'">'+x.stato+'</span></td>'+
       '<td><div class="action-icons">'+
       '<button class="icon-btn" onclick="openModalPreventivo(this.dataset.id)" data-id="'+x.id+'"><i class="ti ti-edit"></i></button>'+
