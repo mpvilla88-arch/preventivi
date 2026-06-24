@@ -594,6 +594,7 @@ function renderPreventivi() {
       <tbody>${rows}</tbody>
       <tfoot><tr><td colspan="3">Totale generale</td><td></td><td></td><td style="text-align:right">${fmt(totAll)}</td><td colspan="2"></td></tr></tfoot>
     </table></div></div>`;
+}
 
 function openModalPreventivo(id) {
   const x = id ? DB.preventivi.find(p => p.id === id) : null;
