@@ -71,11 +71,19 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue);bo
 /* TABLES */
 .tbl-wrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
 /* Preventivi table column widths */
-.prev-table table th:nth-child(1){width:100px}.prev-table table th:nth-child(2){width:auto}.prev-table table th:nth-child(3){width:140px}.prev-table table th:nth-child(4){width:85px}.prev-table table th:nth-child(5){width:100px}.prev-table table th:nth-child(6){width:50px}.prev-table table th:nth-child(7){width:105px}.prev-table table th:nth-child(8){width:100px}.prev-table table th:nth-child(9){width:80px}
+.prev-table table{table-layout:fixed}
+.prev-table table th:nth-child(1){width:100px}
+.prev-table table th:nth-child(2){width:160px}
+.prev-table table th:nth-child(3){width:160px}
+.prev-table table th:nth-child(4){width:90px}
+.prev-table table th:nth-child(5){width:130px}
+.prev-table table th:nth-child(6){width:110px}
+.prev-table table th:nth-child(7){width:90px}
+.prev-table table td{word-break:break-word;white-space:normal}
+
 table{width:100%;border-collapse:collapse;font-size:13px}
 th{text-align:left;font-weight:500;padding:8px 10px;border-bottom:.5px solid var(--border);color:var(--text2);font-size:11px;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
-td{padding:9px 10px;border-bottom:.5px solid var(--border);vertical-align:middle;max-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-td.wrap{white-space:normal;max-width:none}
+td{padding:9px 10px;border-bottom:.5px solid var(--border);vertical-align:top}
 tbody tr:last-child td{border-bottom:none}
 tbody tr:hover td{background:var(--bg2)}
 tfoot td{font-weight:500;background:var(--bg2);border-top:.5px solid var(--border)}
@@ -499,7 +507,7 @@ function renderPreventivi(){
       '<td>'+(x.tipo?'<span class="tipo-badge tipo-'+x.tipo.toLowerCase()+'">'+x.tipo+'</span>':'\u2014')+'</td>'+
       '<td><strong>'+(x.categoria||'\u2014')+'</strong></td>'+
       '<td>'+(x.professionista||'\u2014')+'</td>'+
-      '<td>'+(x.data?x.data.split('-').reverse().slice(0,2).join('/'):'-')+'</td>'+
+      '<td>'+(x.data?x.data.split('-').reverse().join('/'):'-')+'</td>'+
       '<td style="text-align:right"><strong>\u20AC '+parseFloat(imp+iva).toLocaleString('it-IT',{minimumFractionDigits:2})+'</strong><br><span style="font-size:10px;color:var(--text2)">imp. \u20AC '+parseFloat(imp).toLocaleString('it-IT',{minimumFractionDigits:2})+'</span></td>'+
       '<td><span class="badge '+bc(x.stato)+'">'+x.stato+'</span></td>'+
       '<td><div class="action-icons">'+
