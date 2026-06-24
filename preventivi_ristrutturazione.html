@@ -301,6 +301,10 @@ tfoot td{font-weight:500;background:var(--bg2);border-top:.5px solid var(--borde
           <button class="btn primary" onclick="openModalFattura()"><i class="ti ti-plus"></i> Registra fattura</button>
         </div>
 
+        <div id="table-fatture"></div>
+      </div>
+    </div>
+
     <!-- IMPOSTAZIONI -->
     <div id="page-impostazioni" class="page">
       <div class="card">
@@ -308,14 +312,12 @@ tfoot td{font-weight:500;background:var(--bg2);border-top:.5px solid var(--borde
         <div class="alert info"><i class="ti ti-info-circle"></i><span>Personalizza i tipi disponibili nel menu "Tipo professionista" dei preventivi.</span></div>
         <div id="tipi-list" style="margin-bottom:1rem"></div>
         <div style="display:flex;gap:8px">
-          <input id="new-tipo" placeholder="es. Paesaggista" style="flex:1;padding:7px 10px;border:.5px solid var(--border2);border-radius:var(--radius);font-size:13px;font-family:inherit;background:var(--bg);color:var(--text)">
+          <input id="new-tipo" placeholder="es. Paesaggista" onkeydown="if(event.key==='Enter')addTipo()" style="flex:1;padding:7px 10px;border:.5px solid var(--border2);border-radius:var(--radius);font-size:13px;font-family:inherit;background:var(--bg);color:var(--text)">
           <button class="btn primary" onclick="addTipo()"><i class="ti ti-plus"></i> Aggiungi</button>
         </div>
       </div>
     </div>
-        <div id="table-fatture"></div>
-      </div>
-    </div>
+
   </div>
 </div>
 
