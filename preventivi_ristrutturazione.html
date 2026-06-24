@@ -5,10 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Preventivi Ristrutturazione</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#ffffff;--bg2:#f7f7f6;--bg3:#f0efec;
+  --bg:#fff;--bg2:#f7f7f6;--bg3:#f0efec;
   --text:#1a1a18;--text2:#6b6b67;--text3:#9b9b96;
   --border:rgba(0,0,0,.12);--border2:rgba(0,0,0,.2);
   --blue:#185FA5;--blue-bg:#E6F1FB;--blue-text:#0c447c;
@@ -17,8 +18,6 @@
   --red:#A32D2D;--red-bg:#FCEBEB;
   --gray:#5F5E5A;--gray-bg:#F1EFE8;
   --radius:8px;--radius-lg:12px;
-  --success:#3B6D11;--success-bg:#EAF3DE;
-  --warning:#854F0B;--warning-bg:#FAEEDA;
 }
 @media(prefers-color-scheme:dark){:root{
   --bg:#1c1c1a;--bg2:#252523;--bg3:#2e2e2b;
@@ -26,84 +25,61 @@
   --border:rgba(255,255,255,.1);--border2:rgba(255,255,255,.2);
   --blue-bg:#0c2540;--blue-text:#85B7EB;
   --green-bg:#1a2e0a;--amber-bg:#2e1e05;--red-bg:#2e0f0f;--gray-bg:#2a2a27;
-  --success-bg:#1a2e0a;--warning-bg:#2e1e05;
 }}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;color:var(--text);background:var(--bg3);min-height:100vh;line-height:1.5}
-
-/* TOPBAR */
 .topbar{background:var(--bg);border-bottom:.5px solid var(--border);padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:52px;position:sticky;top:0;z-index:50;gap:12px}
 .topbar-title{font-size:15px;font-weight:500;display:flex;align-items:center;gap:8px;white-space:nowrap}
 .topbar-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
 .user-chip{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);background:var(--bg2);border:.5px solid var(--border);border-radius:20px;padding:4px 10px}
 .user-chip img{width:20px;height:20px;border-radius:50%}
 .sync-indicator{font-size:11px;color:var(--text3);white-space:nowrap}
-
-/* LAYOUT */
 .wrap{max-width:980px;margin:0 auto;padding:1.5rem}
-
-/* LOGIN SCREEN */
-.login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:80vh;gap:1.5rem;text-align:center}
-.login-card{background:var(--bg);border:.5px solid var(--border);border-radius:var(--radius-lg);padding:2.5rem 2rem;max-width:380px;width:100%}
+.login-screen{display:flex;align-items:center;justify-content:center;min-height:80vh}
+.login-card{background:var(--bg);border:.5px solid var(--border);border-radius:var(--radius-lg);padding:2.5rem 2rem;max-width:380px;width:100%;text-align:center}
 .login-card h2{font-size:20px;font-weight:500;margin-bottom:.5rem}
 .login-card p{font-size:13px;color:var(--text2);margin-bottom:1.5rem;line-height:1.6}
-.google-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:10px 16px;background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);cursor:pointer;font-size:14px;font-family:inherit;color:var(--text);transition:background .15s}
+.google-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:10px 16px;background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);cursor:pointer;font-size:14px;font-family:inherit;color:var(--text)}
 .google-btn:hover{background:var(--bg2)}
 .google-btn svg{width:18px;height:18px;flex-shrink:0}
-
-/* TABS */
 .tabs{display:flex;gap:2px;background:var(--bg2);border:.5px solid var(--border);border-radius:var(--radius-lg);padding:3px;margin-bottom:1.5rem;width:fit-content;flex-wrap:wrap}
-.tab{padding:6px 16px;cursor:pointer;border-radius:var(--radius);font-size:13px;color:var(--text2);background:none;border:none;transition:all .15s;font-family:inherit;white-space:nowrap}
+.tab{padding:6px 14px;cursor:pointer;border-radius:var(--radius);font-size:13px;color:var(--text2);background:none;border:none;font-family:inherit;white-space:nowrap}
 .tab.active{background:var(--bg);color:var(--text);font-weight:500;box-shadow:0 1px 3px rgba(0,0,0,.08)}
 .tab:hover:not(.active){color:var(--text)}
 .page{display:none}.page.active{display:block}
-
-/* CARDS */
 .card{background:var(--bg);border:.5px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1rem}
-.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem}
+.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:8px}
 .card-header h3{font-size:14px;font-weight:500;margin:0}
-
-/* GRIDS */
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.25rem}
 .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.25rem}
-@media(max-width:600px){.grid4{grid-template-columns:1fr 1fr}.grid2{grid-template-columns:1fr}}
-
-/* METRICS */
 .metric{background:var(--bg2);border-radius:var(--radius);padding:.875rem 1rem}
 .metric .lbl{font-size:11px;color:var(--text2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}
 .metric .val{font-size:20px;font-weight:500}
-
-/* FORMS */
 label{font-size:12px;color:var(--text2);display:block;margin-bottom:4px;font-weight:500}
-input,select,textarea{width:100%;padding:7px 10px;border:.5px solid var(--border2);border-radius:var(--radius);font-size:13px;font-family:inherit;background:var(--bg);color:var(--text);transition:border .15s}
+input,select,textarea{width:100%;padding:7px 10px;border:.5px solid var(--border2);border-radius:var(--radius);font-size:13px;font-family:inherit;background:var(--bg);color:var(--text)}
 input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(24,95,165,.12)}
 .frow{display:grid;gap:10px;margin-bottom:10px}
 .frow.c2{grid-template-columns:1fr 1fr}
 .frow.c3{grid-template-columns:1fr 1fr 1fr}
-@media(max-width:500px){.frow.c2,.frow.c3{grid-template-columns:1fr}}
-
-/* BUTTONS */
-.btn{padding:7px 14px;border:.5px solid var(--border2);border-radius:var(--radius);background:transparent;cursor:pointer;font-size:13px;font-family:inherit;color:var(--text);display:inline-flex;align-items:center;gap:6px;transition:all .12s}
+.btn{padding:7px 14px;border:.5px solid var(--border2);border-radius:var(--radius);background:transparent;cursor:pointer;font-size:13px;font-family:inherit;color:var(--text);display:inline-flex;align-items:center;gap:6px}
 .btn:hover{background:var(--bg2)}
-.btn:active{transform:scale(.98)}
 .btn.primary{background:var(--text);color:var(--bg);border-color:var(--text)}
 .btn.primary:hover{opacity:.85}
-.btn.danger{color:var(--red);border-color:rgba(163,45,45,.3)}
+.btn.danger{color:var(--red)}
 .btn.danger:hover{background:var(--red-bg)}
 .btn.sm{padding:4px 10px;font-size:12px}
 .btn-row{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
-
 /* TABLES */
-table{width:100%;border-collapse:collapse;font-size:13px}
+.tbl-wrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:540px}
 th{text-align:left;font-weight:500;padding:8px 10px;border-bottom:.5px solid var(--border);color:var(--text2);font-size:11px;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
 td{padding:9px 10px;border-bottom:.5px solid var(--border);vertical-align:middle}
 tbody tr:last-child td{border-bottom:none}
 tbody tr:hover td{background:var(--bg2)}
 tfoot td{font-weight:500;background:var(--bg2);border-top:.5px solid var(--border)}
 .action-icons{display:flex;gap:4px}
-.icon-btn{background:none;border:none;cursor:pointer;color:var(--text3);padding:3px 5px;border-radius:5px;font-size:15px;line-height:1;display:inline-flex;align-items:center}
+.icon-btn{background:none;border:none;cursor:pointer;color:var(--text3);padding:3px 5px;border-radius:5px;font-size:15px;display:inline-flex;align-items:center}
 .icon-btn:hover{color:var(--text);background:var(--bg2)}
 .icon-btn.danger:hover{color:var(--red);background:var(--red-bg)}
-
 /* BADGES */
 .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500;white-space:nowrap}
 .b-accettato,.b-pagato,.b-ricevuta{background:var(--green-bg);color:var(--green)}
@@ -111,122 +87,91 @@ tfoot td{font-weight:500;background:var(--bg2);border-top:.5px solid var(--borde
 .b-da-richiedere,.b-da-pagare,.b-non-ricevuta{background:var(--blue-bg);color:var(--blue-text)}
 .b-rifiutato{background:var(--red-bg);color:var(--red)}
 .b-anticipo,.b-sal,.b-saldo,.b-acconto{background:var(--gray-bg);color:var(--gray)}
-
 /* ALERTS */
 .alert{padding:10px 14px;border-radius:var(--radius);font-size:13px;margin-bottom:1rem;display:flex;align-items:flex-start;gap:8px}
 .alert i{margin-top:1px;flex-shrink:0}
 .alert.info{background:var(--blue-bg);color:var(--blue-text);border:.5px solid rgba(24,95,165,.2)}
-.alert.success{background:var(--success-bg);color:var(--success);border:.5px solid rgba(59,109,17,.2)}
-.alert.warning{background:var(--warning-bg);color:var(--warning);border:.5px solid rgba(133,79,11,.2)}
-.alert.error{background:var(--red-bg);color:var(--red);border:.5px solid rgba(163,45,45,.2)}
-
+.alert.success{background:var(--green-bg);color:var(--green)}
+.alert.warning{background:var(--amber-bg);color:var(--amber)}
+.alert.error{background:var(--red-bg);color:var(--red)}
 /* CASHFLOW */
 .cf-row{display:grid;grid-template-columns:72px 1fr 100px 100px 110px;gap:8px;align-items:center;padding:8px 0;border-bottom:.5px solid var(--border)}
 .cf-row:last-child{border-bottom:none}
 .bar-wrap{height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-top:3px}
 .bar-fill{height:100%;border-radius:3px;background:var(--blue)}
-.bar-label{font-size:10px;color:var(--text2);margin-top:2px}
-@media(max-width:600px){.cf-row{grid-template-columns:60px 1fr 80px}}
-
 /* MODAL */
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center}
 .overlay.open{display:flex}
 .modal{background:var(--bg);border-radius:var(--radius-lg);padding:1.5rem;width:540px;max-width:95vw;max-height:90vh;overflow-y:auto;position:relative;box-shadow:0 8px 32px rgba(0,0,0,.15)}
 .modal-close{position:absolute;top:12px;right:12px;background:none;border:none;cursor:pointer;font-size:18px;color:var(--text2);padding:4px;border-radius:var(--radius)}
-.modal-close:hover{color:var(--text);background:var(--bg2)}
 .modal h3{font-size:15px;font-weight:500;margin-bottom:1.25rem}
-
-/* EMPTY */
 .empty{text-align:center;padding:2.5rem 1rem;color:var(--text2);font-size:13px}
-
-/* DRIVE STATUS */
+/* MOBILE CARDS */
+.prev-cards{display:none}
+.prev-table{display:block}
+/* DRIVE */
 .drive-dot{width:7px;height:7px;border-radius:50%;background:var(--text3);display:inline-block;margin-right:4px}
-.drive-dot.ok{background:#3B6D11}
-.drive-dot.saving{background:#854F0B;animation:pulse 1s infinite}
-.drive-dot.error{background:#A32D2D}
+.drive-dot.ok{background:var(--green)}
+.drive-dot.saving{background:var(--amber);animation:pulse 1s infinite}
+.drive-dot.error{background:var(--red)}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-
-/* MOBILE RESPONSIVE TABLES */
-.table-wrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
-
-/* Cards: shown on mobile, hidden on desktop */
-.prev-cards-wrap{display:none}
-.prev-table-wrap{display:block}
-
-/* Table: hidden on mobile, shown on desktop */
+/* RESPONSIVE */
 @media(max-width:680px){
-  .prev-cards-wrap{display:block}
-  .prev-table-wrap{display:none}
+  .prev-cards{display:block}
+  .prev-table{display:none}
   .grid4{grid-template-columns:1fr 1fr}
   .grid2{grid-template-columns:1fr}
-  .cf-row{grid-template-columns:60px 1fr 80px}
-  .tabs{flex-wrap:wrap}
-  .tab{padding:5px 10px;font-size:12px}
+  .cf-row{grid-template-columns:56px 1fr 80px}
   .wrap{padding:1rem}
+  .frow.c2,.frow.c3{grid-template-columns:1fr}
+  .tabs{flex-wrap:wrap}
+  .tab{font-size:12px;padding:5px 10px}
 }
-
-/* Card styles */
-.prev-card{background:var(--bg2);border:.5px solid var(--border);border-radius:var(--radius);padding:1rem;margin-bottom:.75rem}
-.prev-card .pc-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.5rem;gap:.5rem}
+/* PREV CARD */
+.prev-card{background:var(--bg);border:.5px solid var(--border);border-radius:var(--radius);padding:1rem;margin-bottom:.75rem}
+.prev-card .pc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.5rem;gap:8px}
 .prev-card .pc-cat{font-weight:500;font-size:14px}
-.prev-card .pc-prof{font-size:13px;color:var(--text2);margin-top:2px}
-.prev-card .pc-row{display:flex;justify-content:space-between;align-items:center;margin-top:.4rem}
+.prev-card .pc-prof{font-size:12px;color:var(--text2);margin-top:2px}
+.prev-card .pc-bottom{display:flex;justify-content:space-between;align-items:center;margin-top:.5rem}
 .prev-card .pc-tot{font-weight:500;font-size:15px}
-/* Dettaglio voci desktop */
-.voci-table{width:100%;border-collapse:collapse;font-size:13px}
-.voci-table th{text-align:left;font-weight:500;padding:7px 10px;border-bottom:.5px solid var(--border);color:var(--text2);font-size:11px;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
-.voci-table td{padding:7px 10px;border-bottom:.5px solid var(--border);vertical-align:middle}
-.voci-table tbody tr:last-child td{border-bottom:none}
-.voci-table tfoot td{font-weight:500;background:var(--bg2);border-top:.5px solid var(--border)}
+/* UPLOAD */
+.upload-zone{border:1.5px dashed var(--border2);border-radius:var(--radius);padding:1.25rem;text-align:center;cursor:pointer;background:var(--bg)}
+.upload-zone:hover{background:var(--bg2)}
 </style>
 </head>
 <body>
-
-<!-- TOPBAR -->
 <div class="topbar">
-  <div class="topbar-title">
-    <i class="ti ti-home-2" style="font-size:18px;color:var(--blue-text)"></i>
-    Preventivi Ristrutturazione
-  </div>
+  <div class="topbar-title"><i class="ti ti-home-2" style="font-size:18px;color:var(--blue-text)"></i> Preventivi Ristrutturazione</div>
   <div class="topbar-right">
     <span class="sync-indicator" id="sync-label"></span>
     <div class="user-chip" id="user-chip" style="display:none">
       <img id="user-avatar" src="" alt="">
       <span id="user-name"></span>
-      <button onclick="signOut()" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:11px;margin-left:2px" title="Esci">✕</button>
+      <button onclick="signOut()" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:11px;margin-left:2px">✕</button>
     </div>
   </div>
 </div>
+<div style="max-width:980px;margin:0 auto;padding:0 1.5rem"><div id="flash" style="display:none;margin-top:12px"></div></div>
 
-<!-- FLASH -->
-<div style="max-width:980px;margin:0 auto;padding:0 1.5rem">
-  <div id="flash" style="display:none;margin-top:12px"></div>
-</div>
-
-<!-- LOGIN SCREEN -->
+<!-- LOGIN -->
 <div id="login-screen" class="login-screen" style="display:none">
   <div class="login-card">
     <div style="font-size:36px;margin-bottom:1rem">🏠</div>
     <h2>Preventivi Ristrutturazione</h2>
-    <p>Accedi con il tuo account Google per caricare e salvare automaticamente i dati su Google Drive.</p>
+    <p>Accedi con Google per sincronizzare i dati su Drive.</p>
     <button class="google-btn" onclick="signIn()">
-      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-      </svg>
+      <svg viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
       Accedi con Google
     </button>
-    <p style="font-size:11px;color:var(--text3);margin-top:1rem;margin-bottom:0">I dati vengono salvati su un file JSON nella tua Google Drive personale. Nessun server esterno coinvolto.</p>
+    <p style="font-size:11px;color:var(--text3);margin-top:1rem">I dati vengono salvati nella tua Google Drive. Nessun server esterno.</p>
   </div>
 </div>
 
 <!-- APP -->
 <div id="app" style="display:none">
   <div class="wrap">
-    <div class="tabs" role="tablist">
+    <div class="tabs">
       <button class="tab active" onclick="showTab('preventivi')">Preventivi</button>
       <button class="tab" onclick="showTab('dettaglio')">Dettaglio</button>
       <button class="tab" onclick="showTab('pagamenti')">Pagamenti</button>
@@ -251,11 +196,9 @@ tfoot td{font-weight:500;background:var(--bg2);border-top:.5px solid var(--borde
       <div class="card">
         <div class="card-header">
           <h3>Dettaglio preventivo</h3>
-          <div style="display:flex;gap:8px;align-items:center">
-            <select id="dettaglio-select" onchange="renderDettaglio()" style="font-size:13px;padding:6px 10px;border:.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text)">
-              <option value="">— Seleziona preventivo —</option>
-            </select>
-          </div>
+          <select id="dettaglio-select" onchange="renderDettaglio()" style="font-size:13px;padding:6px 10px;border:.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);max-width:280px">
+            <option value="">— Seleziona preventivo —</option>
+          </select>
         </div>
         <div id="dettaglio-content"><div class="empty">Seleziona un preventivo dal menu in alto.</div></div>
       </div>
@@ -266,9 +209,9 @@ tfoot td{font-weight:500;background:var(--bg2);border-top:.5px solid var(--borde
       <div class="card">
         <div class="card-header">
           <h3>Piano di pagamento</h3>
-          <button class="btn primary" onclick="openModalPagamento()"><i class="ti ti-plus"></i> Aggiungi pagamento</button>
+          <button class="btn primary" onclick="openModalPagamento()"><i class="ti ti-plus"></i> Aggiungi</button>
         </div>
-        <div class="alert info"><i class="ti ti-info-circle"></i><span>Registra ogni bonifico o acconto: anticipo, SAL, saldo finale. Salva il CRO per la riconciliazione.</span></div>
+        <div class="alert info"><i class="ti ti-info-circle"></i><span>Registra ogni bonifico o acconto con il relativo CRO per la riconciliazione.</span></div>
         <div id="table-pagamenti"></div>
       </div>
     </div>
@@ -279,15 +222,12 @@ tfoot td{font-weight:500;background:var(--bg2);border-top:.5px solid var(--borde
         <div class="metric"><div class="lbl">Totale impegnato (accettati)</div><div class="val" id="cf-totale">—</div></div>
         <div class="metric"><div class="lbl">Già pagato</div><div class="val" id="cf-pagato">—</div></div>
       </div>
-      <div class="card">
-        <div class="card-header"><h3>Uscite per mese</h3></div>
-        <div id="cashflow-table"></div>
-      </div>
+      <div class="card"><div class="card-header"><h3>Uscite per mese</h3></div><div id="cashflow-table"></div></div>
     </div>
 
     <!-- RICONCILIAZIONE -->
     <div id="page-riconciliazione" class="page">
-      <div class="alert info"><i class="ti ti-receipt"></i><span>Associa ogni fattura al relativo bonifico. Utile per la detrazione 50% ristrutturazioni (art. 16-bis TUIR).</span></div>
+      <div class="alert info"><i class="ti ti-receipt"></i><span>Associa ogni fattura al bonifico corrispondente. Detrazione 50% ristrutturazioni (art. 16-bis TUIR).</span></div>
       <div class="card">
         <div class="card-header">
           <h3>Fatture ricevute</h3>
@@ -300,718 +240,548 @@ tfoot td{font-weight:500;background:var(--bg2);border-top:.5px solid var(--borde
 </div>
 
 <!-- MODAL -->
-<div class="overlay" id="overlay" onclick="handleOverlayClick(event)">
+<div class="overlay" id="overlay" onclick="if(event.target===this)closeModal()">
   <div class="modal">
     <button class="modal-close" onclick="closeModal()"><i class="ti ti-x"></i></button>
     <div id="modal-content"></div>
   </div>
 </div>
 
-<!-- GOOGLE APIs -->
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 <script>
-// ── CONFIG ────────────────────────────────────────────────────────────────
-const CLIENT_ID = '556181593040-hd049ep29sae2ge7uut9p644vs03colg.apps.googleusercontent.com';
-const SCOPES = 'https://www.googleapis.com/auth/drive.file';
-const DRIVE_FILE_NAME = 'preventivi_ristrutturazione_data.json';
-  const DRIVE_FOLDER_ID = '1ngCmFkcxf5fK0w_FtSHdUqoAcwEdrx6n';
-  // La chiave API viene salvata nel browser dell'utente, mai nel codice
-  function getAnthropicKey() {
-    return localStorage.getItem('anthropic_key') || '';
-  }
-  function setAnthropicKey(k) {
-    localStorage.setItem('anthropic_key', k);
-  }
+const CLIENT_ID='556181593040-hd049ep29sae2ge7uut9p644vs03colg.apps.googleusercontent.com';
+const SCOPES='https://www.googleapis.com/auth/drive.file';
+const DRIVE_FILE_NAME='preventivi_ristrutturazione_data.json';
+const DRIVE_FOLDER_ID='1ngCmFkcxf5fK0w_FtSHdUqoAcwEdrx6n';
+const MESI=['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+const STATI_PREV=['In valutazione','Accettato','Da richiedere','Rifiutato'];
+const STATI_PAG=['Da pagare','Pagato','Parziale'];
+const TIPI_PAG=['Anticipo','SAL','Saldo','Acconto'];
+const STATI_FAT=['Non ricevuta','Ricevuta','Attesa'];
 
-// ── STATO ─────────────────────────────────────────────────────────────────
-let DB = { preventivi: [], pagamenti: [], fatture: [] };
-let driveFileId = null;
-let accessToken = null;
-let saveTimer = null;
-let isSaving = false;
-
-// ── GOOGLE AUTH ───────────────────────────────────────────────────────────
+let DB={preventivi:[],pagamenti:[],fatture:[]};
+let driveFileId=null,accessToken=null,saveTimer=null;
 let tokenClient;
 
-window.addEventListener('load', () => {
-  // Prova a recuperare token da sessionStorage
-  const saved = sessionStorage.getItem('gtoken');
-  if (saved) {
-    const parsed = JSON.parse(saved);
-    if (parsed.expires > Date.now()) {
-      accessToken = parsed.token;
-      onSignedIn(parsed.profile);
-      return;
-    }
+// ---
+window.addEventListener('load',()=>{
+  const saved=sessionStorage.getItem('gtoken');
+  if(saved){
+    const p=JSON.parse(saved);
+    if(p.expires>Date.now()){accessToken=p.token;onSignedIn(p.profile);return;}
   }
-  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-screen').style.display='flex';
 });
 
-function initTokenClient() {
-  tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: CLIENT_ID,
-    scope: SCOPES,
-    callback: async (resp) => {
-      if (resp.error) { flash('Errore di autenticazione: ' + resp.error, 'error'); return; }
-      accessToken = resp.access_token;
-      // Recupera profilo
-      const profileResp = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-        headers: { Authorization: 'Bearer ' + accessToken }
-      });
-      const profile = await profileResp.json();
-      // Salva in sessione (scade con la tab)
-      sessionStorage.setItem('gtoken', JSON.stringify({
-        token: accessToken,
-        expires: Date.now() + (resp.expires_in - 60) * 1000,
-        profile
-      }));
+function signIn(){
+  if(!window.google){flash('Google API non caricata, riprova tra un secondo.','warning');return;}
+  if(!tokenClient) tokenClient=google.accounts.oauth2.initTokenClient({
+    client_id:CLIENT_ID,scope:SCOPES,
+    callback:async(resp)=>{
+      if(resp.error){flash('Errore autenticazione: '+resp.error,'error');return;}
+      accessToken=resp.access_token;
+      const pr=await fetch('https://www.googleapis.com/oauth2/v3/userinfo',{headers:{Authorization:'Bearer '+accessToken}});
+      const profile=await pr.json();
+      sessionStorage.setItem('gtoken',JSON.stringify({token:accessToken,expires:Date.now()+(resp.expires_in-60)*1000,profile}));
       onSignedIn(profile);
     }
   });
+  tokenClient.requestAccessToken({prompt:'consent'});
 }
 
-function signIn() {
-  if (!window.google) { flash('Google API non ancora caricata, riprova tra un secondo.', 'warning'); return; }
-  if (!tokenClient) initTokenClient();
-  tokenClient.requestAccessToken({ prompt: 'consent' });
-}
-
-function signOut() {
-  if (accessToken) google.accounts.oauth2.revoke(accessToken);
-  accessToken = null; driveFileId = null;
+function signOut(){
+  if(accessToken)google.accounts.oauth2.revoke(accessToken);
+  accessToken=null;driveFileId=null;
   sessionStorage.removeItem('gtoken');
-  document.getElementById('app').style.display = 'none';
-  document.getElementById('user-chip').style.display = 'none';
-  document.getElementById('login-screen').style.display = 'flex';
-  setSyncLabel('', '');
+  document.getElementById('app').style.display='none';
+  document.getElementById('user-chip').style.display='none';
+  document.getElementById('login-screen').style.display='flex';
+  setSyncLabel('','');
 }
 
-async function onSignedIn(profile) {
-  document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('app').style.display = 'block';
-  document.getElementById('user-chip').style.display = 'flex';
-  document.getElementById('user-name').textContent = profile.name || profile.email;
-  if (profile.picture) document.getElementById('user-avatar').src = profile.picture;
-  setSyncLabel('loading', 'Caricamento dati…');
+async function onSignedIn(profile){
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('user-chip').style.display='flex';
+  document.getElementById('user-name').textContent=profile.name||profile.email;
+  if(profile.picture)document.getElementById('user-avatar').src=profile.picture;
+  setSyncLabel('loading','Caricamento dati\u2026');
   await loadFromDrive();
   renderCurrentTab();
 }
 
-// ── DRIVE ─────────────────────────────────────────────────────────────────
-async function driveRequest(url, options = {}) {
-  const resp = await fetch(url, {
-    ...options,
-    headers: {
-      'Authorization': 'Bearer ' + accessToken,
-      ...(options.headers || {})
+// ---
+async function driveReq(url,opts={}){
+  const r=await fetch(url,{...opts,headers:{Authorization:'Bearer '+accessToken,...(opts.headers||{})}});
+  if(r.status===401){signOut();throw new Error('Token scaduto');}
+  return r;
+}
+
+async function findOrCreateFile(){
+  const q=encodeURIComponent("name='"+DRIVE_FILE_NAME+"' and '"+DRIVE_FOLDER_ID+"' in parents and trashed=false");
+  const s=await driveReq('https://www.googleapis.com/drive/v3/files?q='+q+'&fields=files(id,name)');
+  const d=await s.json();
+  if(d.files&&d.files.length>0){driveFileId=d.files[0].id;return 'found';}
+  const meta=JSON.stringify({name:DRIVE_FILE_NAME,mimeType:'application/json',parents:[DRIVE_FOLDER_ID]});
+  const body='--b\r\nContent-Type: application/json\r\n\r\n'+meta+'\r\n--b\r\nContent-Type: application/json\r\n\r\n'+JSON.stringify(DB)+'\r\n--b--';
+  const c=await driveReq('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',{method:'POST',headers:{'Content-Type':'multipart/related; boundary=b'},body});
+  const cd=await c.json();driveFileId=cd.id;return 'created';
+}
+
+async function loadFromDrive(){
+  try{
+    const r=await findOrCreateFile();
+    if(r==='found'){
+      const resp=await driveReq('https://www.googleapis.com/drive/v3/files/'+driveFileId+'?alt=media');
+      const text=await resp.text();
+      if(text&&text.trim().startsWith('{')){const p=JSON.parse(text);if(p.preventivi!==undefined)DB=p;}
     }
-  });
-  if (resp.status === 401) { signOut(); throw new Error('Token scaduto'); }
-  return resp;
+    setSyncLabel('ok','Sincronizzato con Drive');
+  }catch(e){setSyncLabel('error','Errore caricamento');flash('Errore caricamento Drive: '+e.message,'error');}
 }
 
-async function findOrCreateFile() {
-  // Cerca file nella cartella specifica
-  const q = encodeURIComponent(`name='${DRIVE_FILE_NAME}' and '${DRIVE_FOLDER_ID}' in parents and trashed=false`);
-  const search = await driveRequest(
-    `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)`
-  );
-  const data = await search.json();
-  if (data.files && data.files.length > 0) {
-    driveFileId = data.files[0].id;
-    return 'found';
-  }
-  // Crea nuovo file nella cartella specificata
-  const meta = JSON.stringify({ name: DRIVE_FILE_NAME, mimeType: 'application/json', parents: [DRIVE_FOLDER_ID] });
-  const content = JSON.stringify(DB);
-  const boundary = 'boundary123';
-  const body = `--${boundary}\r\nContent-Type: application/json\r\n\r\n${meta}\r\n--${boundary}\r\nContent-Type: application/json\r\n\r\n${content}\r\n--${boundary}--`;
-  const create = await driveRequest(
-    'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',
-    { method: 'POST', headers: { 'Content-Type': `multipart/related; boundary=${boundary}` }, body }
-  );
-  const created = await create.json();
-  driveFileId = created.id;
-  return 'created';
+async function saveToDrive(){
+  if(!accessToken||!driveFileId)return;
+  setSyncLabel('saving','Salvataggio\u2026');
+  try{
+    await driveReq('https://www.googleapis.com/upload/drive/v3/files/'+driveFileId+'?uploadType=media',
+      {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(DB)});
+    setSyncLabel('ok','Salvato - '+new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}));
+  }catch(e){setSyncLabel('error','Errore salvataggio');flash('Errore salvataggio Drive.','error');}
 }
 
-async function loadFromDrive() {
-  try {
-    const result = await findOrCreateFile();
-    if (result === 'found') {
-      const resp = await driveRequest(`https://www.googleapis.com/drive/v3/files/${driveFileId}?alt=media`);
-      const text = await resp.text();
-      if (text && text.trim().startsWith('{')) {
-        const parsed = JSON.parse(text);
-        if (parsed.preventivi !== undefined) DB = parsed;
-      }
-    }
-    setSyncLabel('ok', 'Sincronizzato con Drive');
-  } catch(e) {
-    setSyncLabel('error', 'Errore caricamento');
-    flash('Errore nel caricamento da Drive: ' + e.message, 'error');
-  }
+function saveDB(){clearTimeout(saveTimer);saveTimer=setTimeout(saveToDrive,1500);}
+function setSyncLabel(state,text){
+  const el=document.getElementById('sync-label');
+  const dot={'ok':'ok','saving':'saving','error':'error','loading':'saving'}[state]||'';
+  el.innerHTML='<span class="drive-dot '+dot+'"></span>'+text;
 }
 
-async function saveToDrive() {
-  if (!accessToken || !driveFileId) return;
-  isSaving = true;
-  setSyncLabel('saving', 'Salvataggio…');
-  try {
-    await driveRequest(
-      `https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`,
-      { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(DB) }
-    );
-    setSyncLabel('ok', 'Salvato · ' + new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }));
-  } catch(e) {
-    setSyncLabel('error', 'Errore salvataggio');
-    flash('Errore nel salvataggio su Drive. I dati sono al sicuro localmente.', 'error');
-  }
-  isSaving = false;
+// ---
+function fmt(n){return 'EUR '+parseFloat(n||0).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmtE(n){return 'e '+parseFloat(n||0).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function bc(s){var x=(s||'').toLowerCase().replace(/[^a-z0-9]+/g,'-');return 'b-'+x;}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+function v(id){var el=document.getElementById(id);return el?el.value.trim():'';}
+function flash(msg,type){
+  var el=document.getElementById('flash');
+  el.className='alert '+type;el.innerHTML=msg;el.style.display='flex';
+  setTimeout(function(){el.style.display='none';},4000);
 }
+function openModal(){document.getElementById('overlay').classList.add('open');}
+function closeModal(){document.getElementById('overlay').classList.remove('open');}
+function deleteItem(coll,id,fn){if(confirm('Eliminare questo elemento?')){DB[coll]=DB[coll].filter(function(x){return x.id!==id;});saveDB();fn();}}
+function getKey(){return localStorage.getItem('anthropic_key')||'';}
+function setKey(k){localStorage.setItem('anthropic_key',k);}
 
-function scheduleSave() {
-  clearTimeout(saveTimer);
-  saveTimer = setTimeout(saveToDrive, 1500);
-}
-
-function setSyncLabel(state, text) {
-  const el = document.getElementById('sync-label');
-  const dots = { ok: 'ok', saving: 'saving', error: 'error', loading: 'saving' };
-  el.innerHTML = `<span class="drive-dot ${dots[state] || ''}"></span>${text}`;
-}
-
-// ── APP LOGIC ─────────────────────────────────────────────────────────────
-const STATI_PREV = ['In valutazione','Accettato','Da richiedere','Rifiutato'];
-const STATI_PAG  = ['Da pagare','Pagato','Parziale'];
-const TIPI_PAG   = ['Anticipo','SAL','Saldo','Acconto'];
-const STATI_FAT  = ['Non ricevuta','Ricevuta','Attesa'];
-const MESI = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
-
-function fmtNum(n){ return parseFloat(n||0).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2}); }
-function fmt(n){ return '€ ' + fmtNum(n); }
-function bc(s){ return 'b-' + (s||'').toLowerCase().replace(/\s+/g,'-').replace(/[àá]/g,'a'); }
-function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
-function v(id){ const el = document.getElementById(id); return el ? el.value.trim() : ''; }
-
-function flash(msg, type) {
-  const el = document.getElementById('flash');
-  el.className = 'alert ' + type;
-  el.innerHTML = msg;
-  el.style.display = 'flex';
-  setTimeout(() => el.style.display = 'none', 4000);
-}
-
-function saveDB() {
-  scheduleSave();
-}
-
-function showTab(t) {
-  document.querySelectorAll('.tab').forEach((b,i) =>
-    b.classList.toggle('active', ['preventivi','dettaglio','pagamenti','cashflow','riconciliazione'][i] === t));
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById('page-' + t).classList.add('active');
+// ---
+function showTab(t){
+  var tabs=['preventivi','dettaglio','pagamenti','cashflow','riconciliazione'];
+  document.querySelectorAll('.tab').forEach(function(b,i){b.classList.toggle('active',tabs[i]===t);});
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
+  document.getElementById('page-'+t).classList.add('active');
   renderCurrentTab();
 }
-
-function renderCurrentTab() {
-  const active = document.querySelector('.page.active');
-  if (!active) return;
-  const id = active.id.replace('page-','');
-  if (id === 'preventivi') renderPreventivi();
-  else if (id === 'dettaglio') { populateDettaglioSelect(); renderDettaglio(); }
-  else if (id === 'pagamenti') renderPagamenti();
-  else if (id === 'cashflow') renderCashflow();
-  else if (id === 'riconciliazione') renderFatture();
+function renderCurrentTab(){
+  var active=document.querySelector('.page.active');
+  if(!active)return;
+  var id=active.id.replace('page-','');
+  if(id==='preventivi')renderPreventivi();
+  else if(id==='dettaglio'){populateDettaglioSelect();renderDettaglio();}
+  else if(id==='pagamenti')renderPagamenti();
+  else if(id==='cashflow')renderCashflow();
+  else if(id==='riconciliazione')renderFatture();
 }
 
-// ── PREVENTIVI ────────────────────────────────────────────────────────────
-function renderPreventivi() {
-  const p = DB.preventivi;
-  const acc = p.filter(x => x.stato === 'Accettato');
-  const totImp = acc.reduce((s,x) => s + parseFloat(x.imponibile||0), 0);
-  const totTot = acc.reduce((s,x) => s + parseFloat(x.imponibile||0) * (1 + parseFloat(x.iva||22)/100), 0);
-  document.getElementById('metrics-prev').innerHTML = `
-    <div class="metric"><div class="lbl">Totale preventivi</div><div class="val">${p.length}</div></div>
-    <div class="metric"><div class="lbl">Accettati</div><div class="val">${acc.length}</div></div>
-    <div class="metric"><div class="lbl">Imponibile accettati</div><div class="val" style="font-size:15px">${fmt(totImp)}</div></div>
-    <div class="metric"><div class="lbl">Totale con IVA</div><div class="val" style="font-size:15px">${fmt(totTot)}</div></div>`;
-  if (!p.length) {
-    document.getElementById('table-preventivi').innerHTML = '<div class="empty">Nessun preventivo. Usa "Nuovo preventivo" per iniziare.</div>';
-    return;
-  }
-  const totAll = p.reduce((s,x) => s + parseFloat(x.imponibile||0)*(1+parseFloat(x.iva||22)/100), 0);
-
-  // Mobile cards (shown via CSS on small screens)
-  let cards = '';
-  p.forEach(x => {
-    const imp = parseFloat(x.imponibile||0), iva = imp * parseFloat(x.iva||22)/100;
-    cards += `<div class="prev-card">
-      <div class="pc-head">
-        <div>
-          <div class="pc-cat">${x.categoria||'—'}</div>
-          <div class="pc-prof">${x.professionista||'—'}</div>
-        </div>
-        <span class="badge ${bc(x.stato)}">${x.stato}</span>
-      </div>
-      <div class="pc-row">
-        <span style="color:var(--text2);font-size:12px">${x.data||'—'} · IVA ${x.iva||22}%</span>
-        <span class="pc-tot">${fmt(imp+iva)}</span>
-      </div>
-      <div style="display:flex;gap:6px;margin-top:.6rem;justify-content:flex-end">
-        <button class="btn sm" onclick="openModalPreventivo('${x.id}')"><i class="ti ti-edit"></i> Modifica</button>
-        <button class="btn sm" onclick="showTab('dettaglio');setTimeout(()=>{document.getElementById('dettaglio-select').value='${x.id}';renderDettaglio()},50)"><i class="ti ti-list"></i> Dettaglio</button>
-        <button class="btn sm danger" onclick="deleteItem('preventivi','${x.id}',renderPreventivi)"><i class="ti ti-trash"></i></button>
-      </div>
-    </div>`;
+// ---
+function renderPreventivi(){
+  var p=DB.preventivi;
+  var acc=p.filter(function(x){return x.stato==='Accettato';});
+  var totImp=acc.reduce(function(s,x){return s+parseFloat(x.imponibile||0);},0);
+  var totTot=acc.reduce(function(s,x){return s+parseFloat(x.imponibile||0)*(1+parseFloat(x.iva||22)/100);},0);
+  document.getElementById('metrics-prev').innerHTML=
+    '<div class="metric"><div class="lbl">Totale preventivi</div><div class="val">'+p.length+'</div></div>'+
+    '<div class="metric"><div class="lbl">Accettati</div><div class="val">'+acc.length+'</div></div>'+
+    '<div class="metric"><div class="lbl">Imponibile accettati</div><div class="val" style="font-size:15px">\u20AC '+parseFloat(totImp).toLocaleString('it-IT',{minimumFractionDigits:2})+'</div></div>'+
+    '<div class="metric"><div class="lbl">Totale con IVA</div><div class="val" style="font-size:15px">\u20AC '+parseFloat(totTot).toLocaleString('it-IT',{minimumFractionDigits:2})+'</div></div>';
+  if(!p.length){document.getElementById('table-preventivi').innerHTML='<div class="empty">Nessun preventivo. Usa "Nuovo preventivo" per iniziare.</div>';return;}
+  var totAll=p.reduce(function(s,x){return s+parseFloat(x.imponibile||0)*(1+parseFloat(x.iva||22)/100);},0);
+  // Mobile cards
+  var cards='';
+  p.forEach(function(x){
+    var imp=parseFloat(x.imponibile||0),iva=imp*parseFloat(x.iva||22)/100;
+    cards+='<div class="prev-card">'+
+      '<div class="pc-top"><div><div class="pc-cat">'+(x.categoria||'\u2014')+'</div><div class="pc-prof">'+(x.professionista||'\u2014')+'</div></div>'+
+      '<span class="badge '+bc(x.stato)+'">'+x.stato+'</span></div>'+
+      '<div class="pc-bottom"><span style="color:var(--text2);font-size:12px">'+(x.data||'\u2014')+' \u00B7 IVA '+(x.iva||22)+'%</span>'+
+      '<span class="pc-tot">\u20AC '+parseFloat(imp+iva).toLocaleString('it-IT',{minimumFractionDigits:2})+'</span></div>'+
+      '<div style="display:flex;gap:6px;margin-top:.6rem;justify-content:flex-end">'+
+      '<button class="btn sm" onclick="openModalPreventivo(this.dataset.id)" data-id="'+x.id+'"><i class="ti ti-edit"></i> Modifica</button>'+
+      '<button class="btn sm" onclick="goDettaglio(this.dataset.id)" data-id="'+x.id+'"><i class="ti ti-list"></i> Dettaglio</button>'+
+      '<button class="btn sm danger" onclick="deleteItem(\'preventivi\',this.dataset.id,renderPreventivi)" data-id="'+x.id+'"><i class="ti ti-trash"></i></button>'+
+      '</div></div>';
   });
-  cards += `<div style="padding:.75rem 0;font-size:13px;color:var(--text2);text-align:right;border-top:.5px solid var(--border)">Totale: <strong>${fmt(totAll)}</strong></div>`;
-
   // Desktop table
-  let rows = '';
-  p.forEach(x => {
-    const imp = parseFloat(x.imponibile||0), iva = imp * parseFloat(x.iva||22)/100;
-    rows += `<tr>
-      <td><strong>${x.categoria||'—'}</strong></td>
-      <td>${x.professionista||'—'}</td>
-      <td>${x.data||'—'}</td>
-      <td style="text-align:right">${fmt(imp)}</td>
-      <td style="text-align:right">${x.iva||22}%</td>
-      <td style="text-align:right"><strong>${fmt(imp+iva)}</strong></td>
-      <td><span class="badge ${bc(x.stato)}">${x.stato}</span></td>
-      <td><div class="action-icons">
-        <button class="icon-btn" onclick="openModalPreventivo('${x.id}')"><i class="ti ti-edit"></i></button>
-        <button class="icon-btn" onclick="showTab('dettaglio');setTimeout(()=>{document.getElementById('dettaglio-select').value='${x.id}';renderDettaglio()},50)" title="Dettaglio"><i class="ti ti-list"></i></button>
-        <button class="icon-btn danger" onclick="deleteItem('preventivi','${x.id}',renderPreventivi)"><i class="ti ti-trash"></i></button>
-      </div></td></tr>`;
+  var rows='';
+  p.forEach(function(x){
+    var imp=parseFloat(x.imponibile||0),iva=imp*parseFloat(x.iva||22)/100;
+    rows+='<tr>'+
+      '<td><strong>'+(x.categoria||'\u2014')+'</strong></td>'+
+      '<td>'+(x.professionista||'\u2014')+'</td>'+
+      '<td>'+(x.data||'\u2014')+'</td>'+
+      '<td style="text-align:right">\u20AC '+parseFloat(imp).toLocaleString('it-IT',{minimumFractionDigits:2})+'</td>'+
+      '<td style="text-align:right">'+(x.iva||22)+'%</td>'+
+      '<td style="text-align:right"><strong>\u20AC '+parseFloat(imp+iva).toLocaleString('it-IT',{minimumFractionDigits:2})+'</strong></td>'+
+      '<td><span class="badge '+bc(x.stato)+'">'+x.stato+'</span></td>'+
+      '<td><div class="action-icons">'+
+      '<button class="icon-btn" onclick="openModalPreventivo(this.dataset.id)" data-id="'+x.id+'"><i class="ti ti-edit"></i></button>'+
+      '<button class="icon-btn" onclick="goDettaglio(this.dataset.id)" data-id="'+x.id+'" title="Dettaglio"><i class="ti ti-list"></i></button>'+
+      '<button class="icon-btn danger" onclick="deleteItem(\'preventivi\',this.dataset.id,renderPreventivi)" data-id="'+x.id+'"><i class="ti ti-trash"></i></button>'+
+      '</div></td></tr>';
   });
-
-  document.getElementById('table-preventivi').innerHTML =
-    `<div class="prev-cards-wrap">${cards}</div>` +
-    `<div class="prev-table-wrap"><div class="table-wrap"><table>
-      <thead><tr><th>Categoria</th><th>Professionista</th><th>Data</th><th style="text-align:right">Imponibile</th><th style="text-align:right">IVA</th><th style="text-align:right">Totale</th><th>Stato</th><th></th></tr></thead>
-      <tbody>${rows}</tbody>
-      <tfoot><tr><td colspan="3">Totale generale</td><td></td><td></td><td style="text-align:right">${fmt(totAll)}</td><td colspan="2"></td></tr></tfoot>
-    </table></div></div>`;
+  document.getElementById('table-preventivi').innerHTML=
+    '<div class="prev-cards">'+cards+'<div style="padding:.5rem 0;font-size:13px;color:var(--text2);text-align:right;border-top:.5px solid var(--border)">Totale: <strong>\u20AC '+parseFloat(totAll).toLocaleString('it-IT',{minimumFractionDigits:2})+'</strong></div></div>'+
+    '<div class="prev-table"><div class="tbl-wrap"><table>'+
+    '<thead><tr><th>Categoria</th><th>Professionista</th><th>Data</th><th style="text-align:right">Imponibile</th><th style="text-align:right">IVA</th><th style="text-align:right">Totale</th><th>Stato</th><th></th></tr></thead>'+
+    '<tbody>'+rows+'</tbody>'+
+    '<tfoot><tr><td colspan="3">Totale generale</td><td></td><td></td><td style="text-align:right">\u20AC '+parseFloat(totAll).toLocaleString('it-IT',{minimumFractionDigits:2})+'</td><td colspan="2"></td></tr></tfoot>'+
+    '</table></div></div>';
 }
 
-function openModalPreventivo(id) {
-  const x = id ? DB.preventivi.find(p => p.id === id) : null;
-  document.getElementById('modal-content').innerHTML = `
-    <h3>${x ? 'Modifica preventivo' : 'Nuovo preventivo'}</h3>
-    ${!x ? `
-    <div style="border:.5px solid var(--border2);border-radius:var(--radius);padding:1rem;margin-bottom:1rem;background:var(--bg2)">
-      <div style="font-size:12px;font-weight:500;margin-bottom:8px;color:var(--text2);text-transform:uppercase;letter-spacing:.04em">📎 Carica preventivo (PDF o foto)</div>
-      <label style="display:flex;align-items:center;justify-content:center;gap:8px;padding:20px;border:1.5px dashed var(--border2);border-radius:var(--radius);cursor:pointer;font-size:13px;color:var(--text2);background:var(--bg);text-transform:none;font-weight:normal;letter-spacing:0" id="upload-label">
-        <i class="ti ti-upload" style="font-size:18px"></i>
-        <span id="upload-label-text">Clicca per scegliere o trascina qui (più file per preventivi multipagina)</span>
-        <input type="file" id="f-file" accept=".pdf,image/*" multiple style="display:none" onchange="handleFileSelected(event)">
-      </label>
-      <div id="ai-status" style="display:none;margin-top:8px;font-size:12px;color:var(--text2);text-align:center"></div>
-    </div>` : ''}
-    <div class="frow c2">
-      <div><label>Categoria lavori</label><input id="f-cat" value="${x?.categoria||''}" placeholder="es. Impianto idraulico"></div>
-      <div><label>Professionista / Azienda</label><input id="f-prof" value="${x?.professionista||''}" placeholder="es. Idraulica Rossi Srl"></div>
-    </div>
-    <div class="frow c3">
-      <div><label>Data preventivo</label><input id="f-data" type="date" value="${x?.data||''}"></div>
-      <div><label>Imponibile (€)</label><input id="f-imp" type="number" step="0.01" value="${x?.imponibile||''}" placeholder="0.00"></div>
-      <div><label>IVA (%)</label><input id="f-iva" type="number" value="${x?.iva||22}" min="0" max="100"></div>
-    </div>
-    <div class="frow c2">
-      <div><label>Stato</label><select id="f-stato">${STATI_PREV.map(s=>`<option ${(x?.stato||'In valutazione')===s?'selected':''}>${s}</option>`).join('')}</select></div>
-      <div><label>Scadenza offerta</label><input id="f-scad" type="date" value="${x?.scadenza||''}"></div>
-    </div>
-    <div class="frow"><label>Note</label><textarea id="f-note" rows="2">${x?.note||''}</textarea></div>
-    <div class="btn-row">
-      <button class="btn" onclick="closeModal()">Annulla</button>
-      <button class="btn primary" onclick="savePreventivo('${x?.id||''}')">Salva</button>
-    </div>`;
+function goDettaglio(id){
+  showTab('dettaglio');
+  setTimeout(function(){
+    var sel=document.getElementById('dettaglio-select');
+    if(sel){sel.value=id;renderDettaglio();}
+  },50);
+}
+
+function openModalPreventivo(id){
+  var x=id?DB.preventivi.find(function(p){return p.id===id;}):null;
+  var uploadHtml='';
+  if(!x){
+    uploadHtml='<div style="border:.5px solid var(--border2);border-radius:var(--radius);padding:1rem;margin-bottom:1rem;background:var(--bg2)">'+
+      '<div style="font-size:12px;font-weight:500;margin-bottom:8px;color:var(--text2);text-transform:uppercase;letter-spacing:.04em">\uD83D\uDCCE Carica preventivo (PDF o foto)</div>'+
+      '<label class="upload-zone" id="upload-label">'+
+      '<i class="ti ti-upload" style="font-size:18px;display:block;margin-bottom:4px"></i>'+
+      '<span id="upload-label-text" style="font-size:13px;color:var(--text2)">Clicca per scegliere (PDF o foto, anche pi\u00F9 file)</span>'+
+      '<input type="file" id="f-file" accept=".pdf,image/*" multiple style="display:none" onchange="handleFiles(event)">'+
+      '</label>'+
+      '<div id="ai-status" style="display:none;margin-top:8px;font-size:12px;text-align:center;color:var(--text2)"></div>'+
+      '</div>';
+  }
+  var statoOpts=STATI_PREV.map(function(s){return '<option'+(((x&&x.stato)||'In valutazione')===s?' selected':'')+'>'+s+'</option>';}).join('');
+  document.getElementById('modal-content').innerHTML=
+    '<h3>'+(x?'Modifica preventivo':'Nuovo preventivo')+'</h3>'+
+    uploadHtml+
+    '<div class="frow c2"><div><label>Categoria lavori</label><input id="f-cat" value="'+(x&&x.categoria||'')+'" placeholder="es. Impianto idraulico"></div>'+
+    '<div><label>Professionista / Azienda</label><input id="f-prof" value="'+(x&&x.professionista||'')+'" placeholder="es. Idraulica Rossi Srl"></div></div>'+
+    '<div class="frow c3"><div><label>Data preventivo</label><input id="f-data" type="date" value="'+(x&&x.data||'')+'"></div>'+
+    '<div><label>Imponibile (\u20AC)</label><input id="f-imp" type="number" step="0.01" value="'+(x&&x.imponibile||'')+'" placeholder="0.00"></div>'+
+    '<div><label>IVA (%)</label><input id="f-iva" type="number" value="'+(x&&x.iva||22)+'" min="0" max="100"></div></div>'+
+    '<div class="frow c2"><div><label>Stato</label><select id="f-stato">'+statoOpts+'</select></div>'+
+    '<div><label>Scadenza offerta</label><input id="f-scad" type="date" value="'+(x&&x.scadenza||'')+'"></div></div>'+
+    '<div class="frow"><label>Note</label><textarea id="f-note" rows="2">'+(x&&x.note||'')+'</textarea></div>'+
+    '<div class="btn-row"><button class="btn" onclick="closeModal()">Annulla</button>'+
+    '<button class="btn primary" onclick="savePreventivo(\''+(x&&x.id||'')+'\')">Salva</button></div>';
   openModal();
 }
 
-async function handleFileSelected(event) {
-  const files = Array.from(event.target.files);
-  if (!files.length) return;
-  const label = document.getElementById('upload-label-text');
-  const status = document.getElementById('ai-status');
-  status.style.display = 'block';
-  label.textContent = files.length === 1 ? files[0].name : `${files.length} file selezionati`;
+function savePreventivo(id){
+  var existing=id?DB.preventivi.find(function(p){return p.id===id;}):null;
+  var obj={id:id||uid(),categoria:v('f-cat'),professionista:v('f-prof'),data:v('f-data'),
+    imponibile:v('f-imp'),iva:v('f-iva'),stato:v('f-stato'),scadenza:v('f-scad'),note:v('f-note'),
+    voci:(existing&&existing.voci)||window._pendingVoci||[]};
+  window._pendingVoci=null;
+  if(id){var i=DB.preventivi.findIndex(function(p){return p.id===id;});DB.preventivi[i]=obj;}
+  else DB.preventivi.push(obj);
+  saveDB();closeModal();renderPreventivi();
+}
 
-  // Controlla chiave API
-  let apiKey = getAnthropicKey();
-  if (!apiKey) {
-    apiKey = prompt('Inserisci la tua Anthropic API Key (sk-ant-...):');
-    if (!apiKey) { status.innerHTML = '⚠️ Chiave API non inserita.'; return; }
-    setAnthropicKey(apiKey.trim());
+// ---
+async function handleFiles(event){
+  var files=Array.from(event.target.files);
+  if(!files.length)return;
+  var lbl=document.getElementById('upload-label-text');
+  var status=document.getElementById('ai-status');
+  lbl.textContent=files.length===1?files[0].name:files.length+' file selezionati';
+  status.style.display='block';
+  var apiKey=getKey();
+  if(!apiKey){
+    apiKey=prompt('Inserisci la tua Anthropic API Key (sk-ant-...):');
+    if(!apiKey){status.innerHTML='\u26A0\uFE0F Chiave API non inserita.';return;}
+    setKey(apiKey.trim());
   }
-
-  status.innerHTML = '<i class="ti ti-loader" style="animation:spin 1s linear infinite;display:inline-block"></i> Lettura dei file in corso…';
-
-  try {
-    const contentBlocks = [];
-
-    for (const file of files) {
-      const isPdf = file.type === 'application/pdf';
-
-      if (isPdf) {
-        // Estrai testo dal PDF con PDF.js (leggero, niente base64 enorme)
-        const text = await extractPdfText(file);
-        contentBlocks.push({ type: 'text', text: `[Contenuto PDF: ${file.name}]
-${text}` });
+  status.style.color='var(--text2)';
+  status.innerHTML='<i class="ti ti-loader" style="animation:spin 1s linear infinite;display:inline-block"></i> Lettura in corso\u2026';
+  try{
+    var blocks=[];
+    for(var i=0;i<files.length;i++){
+      var file=files[i];
+      if(file.type==='application/pdf'){
+        var txt=await extractPdfText(file);
+        blocks.push({type:'text',text:'[PDF: '+file.name+']\n'+txt});
       } else {
-        // Immagine: invia come base64 (le foto sono già compatte)
-        const base64 = await fileToBase64(file);
-        contentBlocks.push({
-          type: 'image',
-          source: { type: 'base64', media_type: file.type, data: base64 }
-        });
+        var b64=await fileToBase64(file);
+        blocks.push({type:'image',source:{type:'base64',media_type:file.type,data:b64}});
       }
     }
-
-    // Prompt di estrazione
-    contentBlocks.push({
-      type: 'text',
-      text: `Analizza questo preventivo ed estrai i seguenti dati in formato JSON puro, senza markdown né backtick:
-{
-  "categoria": "tipo di lavori (es. Impianto elettrico, Pavimentazione, ecc.)",
-  "professionista": "nome azienda o professionista",
-  "data": "data del preventivo in formato YYYY-MM-DD, o stringa vuota se non trovata",
-  "imponibile": numero senza simbolo euro (solo cifra, es. 11821.60),
-  "iva": percentuale IVA come numero (es. 22),
-  "note": "breve descrizione dei lavori principali, max 2 righe"
-}
-Se un campo non è presente lascialo come stringa vuota o null. Rispondi SOLO con il JSON.`
+    blocks.push({type:'text',text:'Analizza questo preventivo ed estrai i dati in formato JSON puro senza markdown:\n{"categoria":"tipo lavori","professionista":"nome azienda","data":"YYYY-MM-DD","imponibile":numero,"iva":numero,"note":"descrizione breve","voci":[{"descrizione":"...","quantita":numero,"unita":"...","prezzo_unitario":numero,"totale":numero}]}\nEstrai TUTTE le voci. Rispondi SOLO con il JSON.'});
+    status.innerHTML='<i class="ti ti-loader" style="animation:spin 1s linear infinite;display:inline-block"></i> Claude sta analizzando\u2026';
+    var resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:4000,messages:[{role:'user',content:blocks}]})
     });
-
-    status.innerHTML = '<i class="ti ti-loader" style="animation:spin 1s linear infinite;display:inline-block"></i> Claude sta analizzando il preventivo…';
-
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 1000,
-        messages: [{ role: 'user', content: contentBlocks }]
-      })
-    });
-
-    if (resp.status === 401) { localStorage.removeItem('anthropic_key'); throw new Error('Chiave API non valida. Verrà richiesta al prossimo tentativo.'); }
-    if (!resp.ok) throw new Error('Errore API: ' + resp.status);
-
-    const data = await resp.json();
-    const raw = data.content[0].text.trim().replace(/```json|```/g, '');
-    const parsed = JSON.parse(raw);
-
-    if (parsed.categoria) document.getElementById('f-cat').value = parsed.categoria;
-    if (parsed.professionista) document.getElementById('f-prof').value = parsed.professionista;
-    if (parsed.data) document.getElementById('f-data').value = parsed.data;
-    if (parsed.imponibile) document.getElementById('f-imp').value = parsed.imponibile;
-    if (parsed.iva) document.getElementById('f-iva').value = parsed.iva;
-    if (parsed.note) document.getElementById('f-note').value = parsed.note;
-    // Salva voci temporaneamente finché non si clicca Salva
-    window._pendingVoci = parsed.voci || [];
-
-    const nVoci = window._pendingVoci.length;
-    status.innerHTML = \`✅ Dati estratti\${nVoci ? \` con \${nVoci} voci di dettaglio\` : ''}! Controlla i campi e correggi se necessario.\`;
-    status.style.color = 'var(--green)';
-  } catch(e) {
-    status.innerHTML = '⚠️ ' + e.message;
-    status.style.color = 'var(--amber)';
+    if(resp.status===401){localStorage.removeItem('anthropic_key');throw new Error('Chiave API non valida.');}
+    if(!resp.ok)throw new Error('Errore API: '+resp.status);
+    var data=await resp.json();
+    var raw=data.content[0].text.trim().replace(/```json|```/g,'');
+    var parsed=JSON.parse(raw);
+    if(parsed.categoria)document.getElementById('f-cat').value=parsed.categoria;
+    if(parsed.professionista)document.getElementById('f-prof').value=parsed.professionista;
+    if(parsed.data)document.getElementById('f-data').value=parsed.data;
+    if(parsed.imponibile)document.getElementById('f-imp').value=parsed.imponibile;
+    if(parsed.iva)document.getElementById('f-iva').value=parsed.iva;
+    if(parsed.note)document.getElementById('f-note').value=parsed.note;
+    window._pendingVoci=parsed.voci||[];
+    var nv=window._pendingVoci.length;
+    status.style.color='var(--green)';
+    status.innerHTML='\u2705 Dati estratti'+(nv?' con '+nv+' voci':'')+'. Controlla e salva.';
+  }catch(e){
+    status.style.color='var(--amber)';
+    status.innerHTML='\u26A0\uFE0F '+e.message;
     console.error(e);
   }
 }
 
-async function extractPdfText(file) {
-  const pdfjsLib = window['pdfjs-dist/build/pdf'];
-  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
-  const arrayBuffer = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-  let fullText = '';
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i);
-    const tc = await page.getTextContent();
-    fullText += tc.items.map(item => item.str).join(' ') + '
-';
+async function extractPdfText(file){
+  var lib=window['pdfjs-dist/build/pdf'];
+  lib.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+  var buf=await file.arrayBuffer();
+  var pdf=await lib.getDocument({data:buf}).promise;
+  var txt='';
+  for(var i=1;i<=pdf.numPages;i++){
+    var page=await pdf.getPage(i);
+    var tc=await page.getTextContent();
+    txt+=tc.items.map(function(it){return it.str;}).join(' ')+'\n';
   }
-  return fullText;
+  return txt;
 }
 
-function fileToBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result.split(',')[1]);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
+function fileToBase64(file){
+  return new Promise(function(resolve,reject){
+    var r=new FileReader();
+    r.onload=function(){resolve(r.result.split(',')[1]);};
+    r.onerror=reject;
+    r.readAsDataURL(file);
   });
 }
 
-function savePreventivo(id) {
-  const existing = id ? DB.preventivi.find(p=>p.id===id) : null;
-  const obj = {
-    id:id||uid(),
-    categoria:v('f-cat'),professionista:v('f-prof'),data:v('f-data'),
-    imponibile:v('f-imp'),iva:v('f-iva'),stato:v('f-stato'),scadenza:v('f-scad'),note:v('f-note'),
-    voci: existing?.voci || window._pendingVoci || []
-  };
-  window._pendingVoci = null;
-  if (id) { const i = DB.preventivi.findIndex(p=>p.id===id); DB.preventivi[i]=obj; }
-  else DB.preventivi.push(obj);
-  saveDB(); closeModal(); renderPreventivi();
-}
-
-// ── PAGAMENTI ─────────────────────────────────────────────────────────────
-function renderPagamenti() {
-  const pg = DB.pagamenti;
-  if (!pg.length) { document.getElementById('table-pagamenti').innerHTML='<div class="empty">Nessun pagamento registrato.</div>'; return; }
-  let rows = '';
-  pg.forEach(x => {
-    const prev = DB.preventivi.find(p => p.id === x.prevId);
-    rows += `<tr>
-      <td>${x.data||'—'}</td>
-      <td>${prev?.categoria||x.categoria||'—'}</td>
-      <td>${prev?.professionista||x.professionista||'—'}</td>
-      <td><span class="badge ${bc(x.tipo)}">${x.tipo||'—'}</span></td>
-      <td style="text-align:right"><strong>${fmt(x.importo)}</strong></td>
-      <td style="font-size:12px;color:var(--text2)">${x.riferimento||'—'}</td>
-      <td><span class="badge ${bc(x.stato)}">${x.stato}</span></td>
-      <td><div class="action-icons">
-        <button class="icon-btn" onclick="openModalPagamento('${x.id}')"><i class="ti ti-edit"></i></button>
-        <button class="icon-btn danger" onclick="deleteItem('pagamenti','${x.id}',renderPagamenti)"><i class="ti ti-trash"></i></button>
-      </div></td></tr>`;
-  });
-  const totTot = pg.reduce((s,x)=>s+parseFloat(x.importo||0),0);
-  const totPag = pg.filter(x=>x.stato==='Pagato').reduce((s,x)=>s+parseFloat(x.importo||0),0);
-  document.getElementById('table-pagamenti').innerHTML = `<table>
-    <thead><tr><th>Data</th><th>Categoria</th><th>Professionista</th><th>Tipo</th><th style="text-align:right">Importo</th><th>Rif. CRO</th><th>Stato</th><th></th></tr></thead>
-    <tbody>${rows}</tbody>
-    <tfoot><tr><td colspan="4">Pianificato / pagato</td><td style="text-align:right">${fmt(totTot)}</td><td colspan="3">di cui pagati: <strong>${fmt(totPag)}</strong></td></tr></tfoot>
-  </table>`;
-}
-
-function openModalPagamento(id) {
-  const x = id ? DB.pagamenti.find(p=>p.id===id) : null;
-  const opts = DB.preventivi.map(p=>`<option value="${p.id}" ${x?.prevId===p.id?'selected':''}>${p.categoria||'—'} — ${p.professionista||'—'}</option>`).join('');
-  document.getElementById('modal-content').innerHTML = `
-    <h3>${x ? 'Modifica pagamento' : 'Nuovo pagamento'}</h3>
-    <div class="frow"><label>Preventivo collegato</label><select id="f-previd"><option value="">— nessuno —</option>${opts}</select></div>
-    <div class="frow c2">
-      <div><label>Categoria (se non collegato)</label><input id="f-pcat" value="${x?.categoria||''}" placeholder="facoltativo"></div>
-      <div><label>Professionista</label><input id="f-pprof" value="${x?.professionista||''}" placeholder="facoltativo"></div>
-    </div>
-    <div class="frow c3">
-      <div><label>Data</label><input id="f-pdata" type="date" value="${x?.data||''}"></div>
-      <div><label>Importo (€)</label><input id="f-pimp" type="number" step="0.01" value="${x?.importo||''}" placeholder="0.00"></div>
-      <div><label>Tipo</label><select id="f-ptipo">${TIPI_PAG.map(s=>`<option ${(x?.tipo||'Anticipo')===s?'selected':''}>${s}</option>`).join('')}</select></div>
-    </div>
-    <div class="frow c2">
-      <div><label>Riferimento bonifico / CRO</label><input id="f-pref" value="${x?.riferimento||''}" placeholder="es. CRO 12345678"></div>
-      <div><label>Stato</label><select id="f-pstato">${STATI_PAG.map(s=>`<option ${(x?.stato||'Da pagare')===s?'selected':''}>${s}</option>`).join('')}</select></div>
-    </div>
-    <div class="frow"><label>Note</label><textarea id="f-pnote" rows="2">${x?.note||''}</textarea></div>
-    <div class="btn-row">
-      <button class="btn" onclick="closeModal()">Annulla</button>
-      <button class="btn primary" onclick="savePagamento('${x?.id||''}')">Salva</button>
-    </div>`;
-  openModal();
-}
-
-function savePagamento(id) {
-  const obj = {id:id||uid(),prevId:v('f-previd'),categoria:v('f-pcat'),professionista:v('f-pprof'),data:v('f-pdata'),importo:v('f-pimp'),tipo:v('f-ptipo'),riferimento:v('f-pref'),stato:v('f-pstato'),note:v('f-pnote')};
-  if (id) { const i=DB.pagamenti.findIndex(p=>p.id===id); DB.pagamenti[i]=obj; }
-  else DB.pagamenti.push(obj);
-  saveDB(); closeModal(); renderPagamenti();
-}
-
-// ── CASHFLOW ──────────────────────────────────────────────────────────────
-function renderCashflow() {
-  const pg = DB.pagamenti;
-  const totImpegnato = DB.preventivi.filter(x=>x.stato==='Accettato').reduce((s,x)=>s+parseFloat(x.imponibile||0)*(1+parseFloat(x.iva||22)/100),0);
-  const totPagato = pg.filter(x=>x.stato==='Pagato').reduce((s,x)=>s+parseFloat(x.importo||0),0);
-  document.getElementById('cf-totale').textContent = fmt(totImpegnato);
-  document.getElementById('cf-pagato').textContent = fmt(totPagato);
-  const byMonth = {};
-  pg.forEach(x => {
-    if (!x.data) return;
-    const d = new Date(x.data), key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-    if (!byMonth[key]) byMonth[key] = {pianificato:0,pagato:0};
-    byMonth[key].pianificato += parseFloat(x.importo||0);
-    if (x.stato==='Pagato') byMonth[key].pagato += parseFloat(x.importo||0);
-  });
-  const keys = Object.keys(byMonth).sort();
-  if (!keys.length) { document.getElementById('cashflow-table').innerHTML='<div class="empty">Aggiungi pagamenti con data per visualizzare il cashflow mensile.</div>'; return; }
-  const maxV = Math.max(...keys.map(k=>byMonth[k].pianificato));
-  let cum = 0;
-  let html = `<div class="cf-row" style="font-size:11px;color:var(--text2);font-weight:500;text-transform:uppercase;letter-spacing:.04em"><span>Mese</span><span>Distribuzione</span><span style="text-align:right">Pianificato</span><span style="text-align:right">Pagato</span><span style="text-align:right">Cumulato</span></div>`;
-  keys.forEach(k => {
-    const m = byMonth[k], [y,mo] = k.split('-');
-    const pct = maxV>0 ? Math.round(m.pianificato/maxV*100) : 0;
-    const pctPag = m.pianificato>0 ? Math.round(m.pagato/m.pianificato*100) : 0;
-    cum += m.pagato;
-    html += `<div class="cf-row">
-      <span style="font-size:12px;font-weight:500">${MESI[parseInt(mo)-1]} ${y}</span>
-      <div><div class="bar-wrap"><div class="bar-fill" style="width:${pct}%"></div></div>${pctPag>0?`<div class="bar-label">${pctPag}% pagato</div>`:''}</div>
-      <span style="text-align:right;font-size:13px">${fmt(m.pianificato)}</span>
-      <span style="text-align:right;font-size:13px;color:${m.pagato>0?'var(--green)':'var(--text2)'}">${fmt(m.pagato)}</span>
-      <span style="text-align:right;font-size:13px">${fmt(cum)}</span>
-    </div>`;
-  });
-  document.getElementById('cashflow-table').innerHTML = html;
-}
-
-// ── FATTURE ───────────────────────────────────────────────────────────────
-function renderFatture() {
-  const ft = DB.fatture;
-  if (!ft.length) { document.getElementById('table-fatture').innerHTML='<div class="empty">Nessuna fattura registrata. Ogni fattura collegata a un bonifico tracciabile è detraibile al 50%.</div>'; return; }
-  let rows = '';
-  ft.forEach(x => {
-    const pag = DB.pagamenti.find(p=>p.id===x.pagId);
-    const bonInfo = pag ? `${pag.tipo} ${pag.data||''} · CRO: ${pag.riferimento||'—'}` : '<em style="color:var(--text3)">non collegato</em>';
-    rows += `<tr>
-      <td style="font-size:12px">${x.numero||'—'}</td>
-      <td>${x.data||'—'}</td>
-      <td>${x.emittente||'—'}</td>
-      <td>${x.descrizione||'—'}</td>
-      <td style="text-align:right"><strong>${fmt(x.importo)}</strong></td>
-      <td><span class="badge ${bc(x.statoFattura)}">${x.statoFattura}</span></td>
-      <td style="font-size:12px;color:var(--text2)">${bonInfo}</td>
-      <td><div class="action-icons">
-        <button class="icon-btn" onclick="openModalFattura('${x.id}')"><i class="ti ti-edit"></i></button>
-        <button class="icon-btn danger" onclick="deleteItem('fatture','${x.id}',renderFatture)"><i class="ti ti-trash"></i></button>
-      </div></td></tr>`;
-  });
-  const totDetr = ft.filter(x=>x.statoFattura==='Ricevuta').reduce((s,x)=>s+parseFloat(x.importo||0),0);
-  document.getElementById('table-fatture').innerHTML = `<table>
-    <thead><tr><th>N° fattura</th><th>Data</th><th>Emittente</th><th>Descrizione</th><th style="text-align:right">Importo</th><th>Stato</th><th>Bonifico collegato</th><th></th></tr></thead>
-    <tbody>${rows}</tbody>
-    <tfoot><tr><td colspan="4">Totale fatture ricevute · detrazione 50% stimata</td><td style="text-align:right">${fmt(totDetr)}</td><td colspan="3"><strong>${fmt(totDetr*0.5)}</strong></td></tr></tfoot>
-  </table>`;
-}
-
-function openModalFattura(id) {
-  const x = id ? DB.fatture.find(f=>f.id===id) : null;
-  const optsPag = DB.pagamenti.map(p=>`<option value="${p.id}" ${x?.pagId===p.id?'selected':''}>${p.data||'—'} · ${p.tipo} · ${fmt(p.importo)}</option>`).join('');
-  document.getElementById('modal-content').innerHTML = `
-    <h3>${x ? 'Modifica fattura' : 'Registra fattura'}</h3>
-    <div class="frow c3">
-      <div><label>N° fattura</label><input id="f-fnum" value="${x?.numero||''}" placeholder="es. 2025/001"></div>
-      <div><label>Data</label><input id="f-fdata" type="date" value="${x?.data||''}"></div>
-      <div><label>Importo (€)</label><input id="f-fimp" type="number" step="0.01" value="${x?.importo||''}" placeholder="0.00"></div>
-    </div>
-    <div class="frow c2">
-      <div><label>Emittente</label><input id="f-fem" value="${x?.emittente||''}" placeholder="es. Idraulica Rossi Srl"></div>
-      <div><label>P.IVA / CF emittente</label><input id="f-fpiva" value="${x?.piva||''}" placeholder="IT12345678901"></div>
-    </div>
-    <div class="frow"><label>Descrizione lavori</label><input id="f-fdesc" value="${x?.descrizione||''}" placeholder="es. Rifacimento impianto idraulico"></div>
-    <div class="frow c2">
-      <div><label>Stato fattura</label><select id="f-fstato">${STATI_FAT.map(s=>`<option ${(x?.statoFattura||'Non ricevuta')===s?'selected':''}>${s}</option>`).join('')}</select></div>
-      <div><label>Causale bonifico parlante</label><input id="f-ftrib" value="${x?.tributo||'Ristrutturazione edilizia art.16-bis TUIR'}" placeholder="Ristrutturazione edilizia art.16-bis TUIR"></div>
-    </div>
-    <div class="frow"><label>Collega a bonifico</label><select id="f-fpag"><option value="">— nessuno —</option>${optsPag}</select></div>
-    <div class="frow"><label>Note per la dichiarazione</label><textarea id="f-fnote" rows="2">${x?.note||''}</textarea></div>
-    <div class="btn-row">
-      <button class="btn" onclick="closeModal()">Annulla</button>
-      <button class="btn primary" onclick="saveFattura('${x?.id||''}')">Salva</button>
-    </div>`;
-  openModal();
-}
-
-function saveFattura(id) {
-  const obj = {id:id||uid(),numero:v('f-fnum'),data:v('f-fdata'),importo:v('f-fimp'),emittente:v('f-fem'),piva:v('f-fpiva'),descrizione:v('f-fdesc'),statoFattura:v('f-fstato'),tributo:v('f-ftrib'),pagId:v('f-fpag'),note:v('f-fnote')};
-  if (id) { const i=DB.fatture.findIndex(f=>f.id===id); DB.fatture[i]=obj; }
-  else DB.fatture.push(obj);
-  saveDB(); closeModal(); renderFatture();
-}
-
-// ── DETTAGLIO ────────────────────────────────────────────────────────────
-function populateDettaglioSelect() {
-  const sel = document.getElementById('dettaglio-select');
-  if (!sel) return;
-  const current = sel.value;
-  sel.innerHTML = '<option value="">— Seleziona preventivo —</option>';
-  DB.preventivi.forEach(x => {
-    const opt = document.createElement('option');
-    opt.value = x.id;
-    opt.textContent = (x.categoria||'—') + ' — ' + (x.professionista||'—');
-    if (x.id === current) opt.selected = true;
+// ---
+function populateDettaglioSelect(){
+  var sel=document.getElementById('dettaglio-select');
+  if(!sel)return;
+  var cur=sel.value;
+  sel.innerHTML='<option value="">\u2014 Seleziona preventivo \u2014</option>';
+  DB.preventivi.forEach(function(x){
+    var opt=document.createElement('option');
+    opt.value=x.id;
+    opt.textContent=(x.categoria||'\u2014')+' \u2014 '+(x.professionista||'\u2014');
+    if(x.id===cur)opt.selected=true;
     sel.appendChild(opt);
   });
 }
 
-function renderDettaglio() {
-  const sel = document.getElementById('dettaglio-select');
-  const container = document.getElementById('dettaglio-content');
-  if (!sel || !container) return;
-  const id = sel.value;
-  if (!id) { container.innerHTML = '<div class="empty">Seleziona un preventivo dal menu in alto.</div>'; return; }
-  const x = DB.preventivi.find(p => p.id === id);
-  if (!x) { container.innerHTML = '<div class="empty">Preventivo non trovato.</div>'; return; }
-
-  const imp = parseFloat(x.imponibile||0);
-  const iva = imp * parseFloat(x.iva||22)/100;
-  const voci = x.voci || [];
-  let voceHtml = '';
-  if (voci.length) {
-    // Always render table, CSS handles mobile
-    if (false) {
-      voceHtml = voci.map(v => `
-        <div class="voce-card">
-          <div class="vc-desc">${v.descrizione||'—'}</div>
-          <div class="vc-row">
-            <span>${v.quantita!=null?v.quantita:''} ${v.unita||''}</span>
-            <span>${v.prezzo_unitario!=null?fmt(v.prezzo_unitario):''}</span>
-            <strong>${v.totale!=null?fmt(v.totale):'—'}</strong>
-          </div>
-        </div>`).join('');
-    } else {
-      const righe = voci.map(v => `<tr>
-        <td>${v.descrizione||'—'}</td>
-        <td style="text-align:right">${v.quantita!=null?v.quantita:''}</td>
-        <td>${v.unita||''}</td>
-        <td style="text-align:right">${v.prezzo_unitario!=null?fmt(v.prezzo_unitario):'—'}</td>
-        <td style="text-align:right"><strong>${v.totale!=null?fmt(v.totale):'—'}</strong></td>
-      </tr>`).join('');
-      voceHtml = `<div class="table-wrap"><table class="voci-table">
-        <thead><tr><th>Descrizione</th><th style="text-align:right">Qtà</th><th>U.M.</th><th style="text-align:right">Prezzo unit.</th><th style="text-align:right">Totale</th></tr></thead>
-        <tbody>${righe}</tbody>
-        <tfoot>
-          <tr><td colspan="4">Imponibile</td><td style="text-align:right">${fmt(imp)}</td></tr>
-          <tr><td colspan="4">IVA (${x.iva||22}%)</td><td style="text-align:right">${fmt(iva)}</td></tr>
-          <tr><td colspan="4"><strong>Totale con IVA</strong></td><td style="text-align:right"><strong>${fmt(imp+iva)}</strong></td></tr>
-        </tfoot>
-      </table></div>`;
-    }
+function renderDettaglio(){
+  var sel=document.getElementById('dettaglio-select');
+  var container=document.getElementById('dettaglio-content');
+  if(!sel||!container)return;
+  var id=sel.value;
+  if(!id){container.innerHTML='<div class="empty">Seleziona un preventivo dal menu in alto.</div>';return;}
+  var x=DB.preventivi.find(function(p){return p.id===id;});
+  if(!x){container.innerHTML='<div class="empty">Preventivo non trovato.</div>';return;}
+  var imp=parseFloat(x.imponibile||0),iva=imp*parseFloat(x.iva||22)/100;
+  var voci=x.voci||[];
+  var voceHtml='';
+  if(voci.length){
+    var righe=voci.map(function(vv){
+      return '<tr><td>'+(vv.descrizione||'\u2014')+'</td>'+
+        '<td style="text-align:right">'+(vv.quantita!=null?vv.quantita:'')+'</td>'+
+        '<td>'+(vv.unita||'')+'</td>'+
+        '<td style="text-align:right">'+(vv.prezzo_unitario!=null?'\u20AC '+parseFloat(vv.prezzo_unitario).toLocaleString('it-IT',{minimumFractionDigits:2}):'\u2014')+'</td>'+
+        '<td style="text-align:right"><strong>'+(vv.totale!=null?'\u20AC '+parseFloat(vv.totale).toLocaleString('it-IT',{minimumFractionDigits:2}):'\u2014')+'</strong></td></tr>';
+    }).join('');
+    voceHtml='<div class="tbl-wrap"><table>'+
+      '<thead><tr><th>Descrizione</th><th style="text-align:right">Qt\u00E0</th><th>U.M.</th><th style="text-align:right">Prezzo unit.</th><th style="text-align:right">Totale</th></tr></thead>'+
+      '<tbody>'+righe+'</tbody>'+
+      '<tfoot>'+
+      '<tr><td colspan="4">Imponibile</td><td style="text-align:right">\u20AC '+parseFloat(imp).toLocaleString('it-IT',{minimumFractionDigits:2})+'</td></tr>'+
+      '<tr><td colspan="4">IVA ('+(x.iva||22)+'%)</td><td style="text-align:right">\u20AC '+parseFloat(iva).toLocaleString('it-IT',{minimumFractionDigits:2})+'</td></tr>'+
+      '<tr><td colspan="4"><strong>Totale con IVA</strong></td><td style="text-align:right"><strong>\u20AC '+parseFloat(imp+iva).toLocaleString('it-IT',{minimumFractionDigits:2})+'</strong></td></tr>'+
+      '</tfoot></table></div>';
   } else {
-    voceHtml = `<div class="alert info" style="margin-top:1rem"><i class="ti ti-info-circle"></i>
-      <span>Nessuna voce di dettaglio. Elimina il preventivo e ricaricalo con il PDF per estrarre le voci automaticamente.</span>
-    </div>`;
+    voceHtml='<div class="alert info" style="margin-top:1rem"><i class="ti ti-info-circle"></i><span>Nessuna voce. Elimina il preventivo e ricaricalo con il PDF per estrarre le voci automaticamente.</span></div>';
   }
-
-  container.innerHTML = `
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:1.25rem">
-      <div class="metric"><div class="lbl">Professionista</div><div style="font-size:14px;font-weight:500;margin-top:4px">${x.professionista||'—'}</div></div>
-      <div class="metric"><div class="lbl">Data</div><div style="font-size:14px;font-weight:500;margin-top:4px">${x.data||'—'}</div></div>
-      <div class="metric"><div class="lbl">Imponibile</div><div style="font-size:14px;font-weight:500;margin-top:4px">${fmt(imp)}</div></div>
-      <div class="metric"><div class="lbl">Totale con IVA</div><div style="font-size:15px;font-weight:500;margin-top:4px">${fmt(imp+iva)}</div></div>
-    </div>
-    ${x.note ? `<div style="font-size:13px;color:var(--text2);margin-bottom:1rem;padding:.75rem;background:var(--bg2);border-radius:var(--radius)">${x.note}</div>` : ''}
-    <div style="font-size:12px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.75rem">Voci di dettaglio (${voci.length})</div>
-    ${voceHtml}`;
+  container.innerHTML=
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:1.25rem">'+
+    '<div class="metric"><div class="lbl">Professionista</div><div style="font-size:13px;font-weight:500;margin-top:4px">'+(x.professionista||'\u2014')+'</div></div>'+
+    '<div class="metric"><div class="lbl">Data</div><div style="font-size:13px;font-weight:500;margin-top:4px">'+(x.data||'\u2014')+'</div></div>'+
+    '<div class="metric"><div class="lbl">Imponibile</div><div style="font-size:13px;font-weight:500;margin-top:4px">\u20AC '+parseFloat(imp).toLocaleString('it-IT',{minimumFractionDigits:2})+'</div></div>'+
+    '<div class="metric"><div class="lbl">Totale con IVA</div><div style="font-size:14px;font-weight:500;margin-top:4px">\u20AC '+parseFloat(imp+iva).toLocaleString('it-IT',{minimumFractionDigits:2})+'</div></div>'+
+    '</div>'+
+    (x.note?'<div style="font-size:13px;color:var(--text2);margin-bottom:1rem;padding:.75rem;background:var(--bg2);border-radius:var(--radius)">'+x.note+'</div>':'')+
+    '<div style="font-size:12px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.75rem">Voci di dettaglio ('+voci.length+')</div>'+
+    voceHtml;
 }
 
-// ── UTILS ─────────────────────────────────────────────────────────────────
-function deleteItem(coll, id, renderFn) {
-  if (confirm('Eliminare questo elemento?')) { DB[coll]=DB[coll].filter(x=>x.id!==id); saveDB(); renderFn(); }
+// ---
+function renderPagamenti(){
+  var pg=DB.pagamenti;
+  if(!pg.length){document.getElementById('table-pagamenti').innerHTML='<div class="empty">Nessun pagamento registrato.</div>';return;}
+  var rows=pg.map(function(x){
+    var prev=DB.preventivi.find(function(p){return p.id===x.prevId;});
+    return '<tr><td>'+(x.data||'\u2014')+'</td>'+
+      '<td>'+(prev&&prev.categoria||x.categoria||'\u2014')+'</td>'+
+      '<td>'+(prev&&prev.professionista||x.professionista||'\u2014')+'</td>'+
+      '<td><span class="badge '+bc(x.tipo)+'">'+(x.tipo||'\u2014')+'</span></td>'+
+      '<td style="text-align:right"><strong>\u20AC '+parseFloat(x.importo||0).toLocaleString('it-IT',{minimumFractionDigits:2})+'</strong></td>'+
+      '<td style="font-size:12px;color:var(--text2)">'+(x.riferimento||'\u2014')+'</td>'+
+      '<td><span class="badge '+bc(x.stato)+'">'+x.stato+'</span></td>'+
+      '<td><div class="action-icons">'+
+      '<button class="icon-btn" onclick="openModalPagamento(\''+x.id+'\')"><i class="ti ti-edit"></i></button>'+
+      '<button class="icon-btn danger" onclick="deleteItem(\'pagamenti\',\''+x.id+'\',renderPagamenti)"><i class="ti ti-trash"></i></button>'+
+      '</div></td></tr>';
+  }).join('');
+  var totT=pg.reduce(function(s,x){return s+parseFloat(x.importo||0);},0);
+  var totP=pg.filter(function(x){return x.stato==='Pagato';}).reduce(function(s,x){return s+parseFloat(x.importo||0);},0);
+  document.getElementById('table-pagamenti').innerHTML='<div class="tbl-wrap"><table>'+
+    '<thead><tr><th>Data</th><th>Categoria</th><th>Professionista</th><th>Tipo</th><th style="text-align:right">Importo</th><th>Rif. CRO</th><th>Stato</th><th></th></tr></thead>'+
+    '<tbody>'+rows+'</tbody>'+
+    '<tfoot><tr><td colspan="4">Pianificato / pagato</td><td style="text-align:right">\u20AC '+parseFloat(totT).toLocaleString('it-IT',{minimumFractionDigits:2})+'</td>'+
+    '<td colspan="3">di cui pagati: <strong>\u20AC '+parseFloat(totP).toLocaleString('it-IT',{minimumFractionDigits:2})+'</strong></td></tr></tfoot>'+
+    '</table></div>';
 }
-function openModal(){ document.getElementById('overlay').classList.add('open'); }
-function closeModal(){ document.getElementById('overlay').classList.remove('open'); }
-function handleOverlayClick(e){ if(e.target===document.getElementById('overlay')) closeModal(); }
+
+function openModalPagamento(id){
+  var x=id?DB.pagamenti.find(function(p){return p.id===id;}):null;
+  var opts=DB.preventivi.map(function(p){return '<option value="'+p.id+'"'+(x&&x.prevId===p.id?' selected':'')+'>'+((p.categoria||'\u2014')+' \u2014 '+(p.professionista||'\u2014'))+'</option>';}).join('');
+  var tipoOpts=TIPI_PAG.map(function(s){return '<option'+(x&&x.tipo===s?' selected':'')+'>'+s+'</option>';}).join('');
+  var statoOpts=STATI_PAG.map(function(s){return '<option'+((x&&x.stato||'Da pagare')===s?' selected':'')+'>'+s+'</option>';}).join('');
+  document.getElementById('modal-content').innerHTML=
+    '<h3>'+(x?'Modifica pagamento':'Nuovo pagamento')+'</h3>'+
+    '<div class="frow"><label>Preventivo collegato</label><select id="f-previd"><option value="">\u2014 nessuno \u2014</option>'+opts+'</select></div>'+
+    '<div class="frow c2"><div><label>Categoria</label><input id="f-pcat" value="'+(x&&x.categoria||'')+'" placeholder="facoltativo"></div>'+
+    '<div><label>Professionista</label><input id="f-pprof" value="'+(x&&x.professionista||'')+'" placeholder="facoltativo"></div></div>'+
+    '<div class="frow c3"><div><label>Data</label><input id="f-pdata" type="date" value="'+(x&&x.data||'')+'"></div>'+
+    '<div><label>Importo (\u20AC)</label><input id="f-pimp" type="number" step="0.01" value="'+(x&&x.importo||'')+'" placeholder="0.00"></div>'+
+    '<div><label>Tipo</label><select id="f-ptipo">'+tipoOpts+'</select></div></div>'+
+    '<div class="frow c2"><div><label>Rif. bonifico / CRO</label><input id="f-pref" value="'+(x&&x.riferimento||'')+'" placeholder="es. CRO 12345678"></div>'+
+    '<div><label>Stato</label><select id="f-pstato">'+statoOpts+'</select></div></div>'+
+    '<div class="frow"><label>Note</label><textarea id="f-pnote" rows="2">'+(x&&x.note||'')+'</textarea></div>'+
+    '<div class="btn-row"><button class="btn" onclick="closeModal()">Annulla</button>'+
+    '<button class="btn primary" onclick="savePagamento(\''+(x&&x.id||'')+'\')">Salva</button></div>';
+  openModal();
+}
+function savePagamento(id){
+  var obj={id:id||uid(),prevId:v('f-previd'),categoria:v('f-pcat'),professionista:v('f-pprof'),
+    data:v('f-pdata'),importo:v('f-pimp'),tipo:v('f-ptipo'),riferimento:v('f-pref'),stato:v('f-pstato'),note:v('f-pnote')};
+  if(id){var i=DB.pagamenti.findIndex(function(p){return p.id===id;});DB.pagamenti[i]=obj;}
+  else DB.pagamenti.push(obj);
+  saveDB();closeModal();renderPagamenti();
+}
+
+// ---
+function renderCashflow(){
+  var pg=DB.pagamenti;
+  var totI=DB.preventivi.filter(function(x){return x.stato==='Accettato';}).reduce(function(s,x){return s+parseFloat(x.imponibile||0)*(1+parseFloat(x.iva||22)/100);},0);
+  var totP=pg.filter(function(x){return x.stato==='Pagato';}).reduce(function(s,x){return s+parseFloat(x.importo||0);},0);
+  document.getElementById('cf-totale').textContent='\u20AC '+parseFloat(totI).toLocaleString('it-IT',{minimumFractionDigits:2});
+  document.getElementById('cf-pagato').textContent='\u20AC '+parseFloat(totP).toLocaleString('it-IT',{minimumFractionDigits:2});
+  var byM={};
+  pg.forEach(function(x){
+    if(!x.data)return;
+    var d=new Date(x.data),k=d.getFullYear()+'-'+(d.getMonth()+1<10?'0':'')+(d.getMonth()+1);
+    if(!byM[k])byM[k]={p:0,pag:0};
+    byM[k].p+=parseFloat(x.importo||0);
+    if(x.stato==='Pagato')byM[k].pag+=parseFloat(x.importo||0);
+  });
+  var keys=Object.keys(byM).sort();
+  if(!keys.length){document.getElementById('cashflow-table').innerHTML='<div class="empty">Aggiungi pagamenti con data per visualizzare il cashflow.</div>';return;}
+  var maxV=Math.max.apply(null,keys.map(function(k){return byM[k].p;}));
+  var cum=0,html='<div class="cf-row" style="font-size:11px;color:var(--text2);font-weight:500;text-transform:uppercase;letter-spacing:.04em"><span>Mese</span><span>Bar</span><span style="text-align:right">Pianificato</span><span style="text-align:right">Pagato</span><span style="text-align:right">Cumulato</span></div>';
+  keys.forEach(function(k){
+    var m=byM[k],parts=k.split('-'),y=parts[0],mo=parseInt(parts[1]);
+    var pct=maxV>0?Math.round(m.p/maxV*100):0;
+    cum+=m.pag;
+    html+='<div class="cf-row">'+
+      '<span style="font-size:12px;font-weight:500">'+MESI[mo-1]+' '+y+'</span>'+
+      '<div><div class="bar-wrap"><div class="bar-fill" style="width:'+pct+'%"></div></div></div>'+
+      '<span style="text-align:right;font-size:13px">\u20AC '+parseFloat(m.p).toLocaleString('it-IT',{minimumFractionDigits:2})+'</span>'+
+      '<span style="text-align:right;font-size:13px;color:'+(m.pag>0?'var(--green)':'var(--text2)')+'\">\u20AC '+parseFloat(m.pag).toLocaleString('it-IT',{minimumFractionDigits:2})+'</span>'+
+      '<span style="text-align:right;font-size:13px">\u20AC '+parseFloat(cum).toLocaleString('it-IT',{minimumFractionDigits:2})+'</span>'+
+      '</div>';
+  });
+  document.getElementById('cashflow-table').innerHTML=html;
+}
+
+// ---
+function renderFatture(){
+  var ft=DB.fatture;
+  if(!ft.length){document.getElementById('table-fatture').innerHTML='<div class="empty">Nessuna fattura. Registrale per la detrazione 50%.</div>';return;}
+  var rows=ft.map(function(x){
+    var pag=DB.pagamenti.find(function(p){return p.id===x.pagId;});
+    var bon=pag?pag.tipo+' '+( pag.data||'')+' \u00B7 CRO: '+(pag.riferimento||'\u2014'):'<em style="color:var(--text3)">non collegato</em>';
+    return '<tr>'+
+      '<td style="font-size:12px">'+(x.numero||'\u2014')+'</td>'+
+      '<td>'+(x.data||'\u2014')+'</td>'+
+      '<td>'+(x.emittente||'\u2014')+'</td>'+
+      '<td>'+(x.descrizione||'\u2014')+'</td>'+
+      '<td style="text-align:right"><strong>\u20AC '+parseFloat(x.importo||0).toLocaleString('it-IT',{minimumFractionDigits:2})+'</strong></td>'+
+      '<td><span class="badge '+bc(x.statoFattura)+'">'+x.statoFattura+'</span></td>'+
+      '<td style="font-size:12px;color:var(--text2)">'+bon+'</td>'+
+      '<td><div class="action-icons">'+
+      '<button class="icon-btn" onclick="openModalFattura(\''+x.id+'\')"><i class="ti ti-edit"></i></button>'+
+      '<button class="icon-btn danger" onclick="deleteItem(\'fatture\',\''+x.id+'\',renderFatture)"><i class="ti ti-trash"></i></button>'+
+      '</div></td></tr>';
+  }).join('');
+  var totD=ft.filter(function(x){return x.statoFattura==='Ricevuta';}).reduce(function(s,x){return s+parseFloat(x.importo||0);},0);
+  document.getElementById('table-fatture').innerHTML='<div class="tbl-wrap"><table>'+
+    '<thead><tr><th>N\u00B0 fattura</th><th>Data</th><th>Emittente</th><th>Descrizione</th><th style="text-align:right">Importo</th><th>Stato</th><th>Bonifico</th><th></th></tr></thead>'+
+    '<tbody>'+rows+'</tbody>'+
+    '<tfoot><tr><td colspan="4">Totale fatture ricevute \u00B7 detrazione 50%</td>'+
+    '<td style="text-align:right">\u20AC '+parseFloat(totD).toLocaleString('it-IT',{minimumFractionDigits:2})+'</td>'+
+    '<td colspan="3"><strong>\u20AC '+parseFloat(totD*0.5).toLocaleString('it-IT',{minimumFractionDigits:2})+'</strong></td></tr></tfoot>'+
+    '</table></div>';
+}
+
+function openModalFattura(id){
+  var x=id?DB.fatture.find(function(f){return f.id===id;}):null;
+  var optsPag=DB.pagamenti.map(function(p){return '<option value="'+p.id+'"'+(x&&x.pagId===p.id?' selected':'')+'>'+((p.data||'\u2014')+' \u00B7 '+p.tipo+' \u00B7 \u20AC '+parseFloat(p.importo||0).toLocaleString('it-IT',{minimumFractionDigits:2}))+'</option>';}).join('');
+  var statOpts=STATI_FAT.map(function(s){return '<option'+((x&&x.statoFattura||'Non ricevuta')===s?' selected':'')+'>'+s+'</option>';}).join('');
+  document.getElementById('modal-content').innerHTML=
+    '<h3>'+(x?'Modifica fattura':'Registra fattura')+'</h3>'+
+    '<div class="frow c3"><div><label>N\u00B0 fattura</label><input id="f-fnum" value="'+(x&&x.numero||'')+'" placeholder="es. 2025/001"></div>'+
+    '<div><label>Data</label><input id="f-fdata" type="date" value="'+(x&&x.data||'')+'"></div>'+
+    '<div><label>Importo (\u20AC)</label><input id="f-fimp" type="number" step="0.01" value="'+(x&&x.importo||'')+'" placeholder="0.00"></div></div>'+
+    '<div class="frow c2"><div><label>Emittente</label><input id="f-fem" value="'+(x&&x.emittente||'')+'" placeholder="es. Idraulica Rossi Srl"></div>'+
+    '<div><label>P.IVA / CF emittente</label><input id="f-fpiva" value="'+(x&&x.piva||'')+'" placeholder="IT12345678901"></div></div>'+
+    '<div class="frow"><label>Descrizione lavori</label><input id="f-fdesc" value="'+(x&&x.descrizione||'')+'" placeholder="es. Rifacimento impianto idraulico"></div>'+
+    '<div class="frow c2"><div><label>Stato fattura</label><select id="f-fstato">'+statOpts+'</select></div>'+
+    '<div><label>Causale bonifico parlante</label><input id="f-ftrib" value="'+(x&&x.tributo||'Ristrutturazione edilizia art.16-bis TUIR')+'" placeholder="art.16-bis TUIR"></div></div>'+
+    '<div class="frow"><label>Collega a bonifico</label><select id="f-fpag"><option value="">\u2014 nessuno \u2014</option>'+optsPag+'</select></div>'+
+    '<div class="frow"><label>Note per la dichiarazione</label><textarea id="f-fnote" rows="2">'+(x&&x.note||'')+'</textarea></div>'+
+    '<div class="btn-row"><button class="btn" onclick="closeModal()">Annulla</button>'+
+    '<button class="btn primary" onclick="saveFattura(\''+(x&&x.id||'')+'\')">Salva</button></div>';
+  openModal();
+}
+function saveFattura(id){
+  var obj={id:id||uid(),numero:v('f-fnum'),data:v('f-fdata'),importo:v('f-fimp'),emittente:v('f-fem'),
+    piva:v('f-fpiva'),descrizione:v('f-fdesc'),statoFattura:v('f-fstato'),tributo:v('f-ftrib'),pagId:v('f-fpag'),note:v('f-fnote')};
+  if(id){var i=DB.fatture.findIndex(function(f){return f.id===id;});DB.fatture[i]=obj;}
+  else DB.fatture.push(obj);
+  saveDB();closeModal();renderFatture();
+}
 </script>
 </body>
 </html>
