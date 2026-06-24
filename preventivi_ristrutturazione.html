@@ -715,7 +715,7 @@ function populateDettaglioSelect(){
   DB.preventivi.forEach(function(x){
     var opt=document.createElement('option');
     opt.value=x.id;
-    opt.textContent=(x.categoria||'\u2014')+' \u2014 '+(x.professionista||'\u2014');
+    opt.textContent=(x.tipo||'\u2014')+' \u2014 '+(x.professionista||'\u2014');
     if(x.id===cur)opt.selected=true;
     sel.appendChild(opt);
   });
