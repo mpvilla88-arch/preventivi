@@ -150,10 +150,27 @@ tfoot td{font-weight:500;background:var(--bg2);border-top:.5px solid var(--borde
 /* UPLOAD */
 .upload-zone{border:1.5px dashed var(--border2);border-radius:var(--radius);padding:1.25rem;text-align:center;cursor:pointer;background:var(--bg)}
 .upload-zone:hover{background:var(--bg2)}
+/* HAMBURGER MENU */
+.hamburger{display:none;background:none;border:none;cursor:pointer;padding:4px 8px;color:var(--text);font-size:22px;line-height:1}
+.drawer-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:300}
+.drawer-overlay.open{display:block}
+.drawer{position:fixed;top:0;left:-260px;width:240px;height:100vh;background:var(--bg);z-index:400;transition:left .25s;box-shadow:4px 0 16px rgba(0,0,0,.15);padding:1rem 0}
+.drawer.open{left:0}
+.drawer-header{display:flex;align-items:center;justify-content:space-between;padding:.5rem 1rem 1rem;border-bottom:.5px solid var(--border);margin-bottom:.5rem}
+.drawer-title{font-size:14px;font-weight:500}
+.drawer-close{background:none;border:none;cursor:pointer;font-size:20px;color:var(--text2)}
+.drawer-item{display:flex;align-items:center;gap:10px;padding:12px 1.25rem;font-size:14px;cursor:pointer;color:var(--text2);border:none;background:none;width:100%;text-align:left;font-family:inherit}
+.drawer-item:hover{background:var(--bg2);color:var(--text)}
+.drawer-item.active{background:var(--blue-bg);color:var(--blue-text);font-weight:500}
+.drawer-item i{font-size:18px;width:22px;text-align:center}
+@media(max-width:680px){
+  .hamburger{display:inline-flex;align-items:center}
+  .tabs{display:none}
+}
 </style>
 </head>
 <body>
-<div class="topbar">
+<div class="topbar"><button class="hamburger" onclick="openDrawer()" aria-label="Menu"><i class="ti ti-menu-2"></i></button>
   <div class="topbar-title"><i class="ti ti-home-2" style="font-size:18px;color:var(--blue-text)"></i> Preventivi Ristrutturazione</div>
   <div class="topbar-right">
     <span class="sync-indicator" id="sync-label"></span>
@@ -165,6 +182,18 @@ tfoot td{font-weight:500;background:var(--bg2);border-top:.5px solid var(--borde
   </div>
 </div>
 <div style="max-width:980px;margin:0 auto;padding:0 1.5rem"><div id="flash" style="display:none;margin-top:12px"></div></div>
+<div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-header">
+    <span class="drawer-title">&#127968; Ristrutturazione</span>
+    <button class="drawer-close" onclick="closeDrawer()"><i class="ti ti-x"></i></button>
+  </div>
+  <button class="drawer-item active" id="di-preventivi" onclick="drawerNav('preventivi')"><i class="ti ti-file-text"></i> Preventivi</button>
+  <button class="drawer-item" id="di-dettaglio" onclick="drawerNav('dettaglio')"><i class="ti ti-list-details"></i> Dettaglio</button>
+  <button class="drawer-item" id="di-pagamenti" onclick="drawerNav('pagamenti')"><i class="ti ti-credit-card"></i> Pagamenti</button>
+  <button class="drawer-item" id="di-cashflow" onclick="drawerNav('cashflow')"><i class="ti ti-chart-bar"></i> Cashflow</button>
+  <button class="drawer-item" id="di-riconciliazione" onclick="drawerNav('riconciliazione')"><i class="ti ti-receipt"></i> Riconciliazione</button>
+</div>
 
 <!-- LOGIN -->
 <div id="login-screen" class="login-screen" style="display:none">
@@ -388,11 +417,20 @@ function getKey(){return localStorage.getItem('anthropic_key')||'';}
 function setKey(k){localStorage.setItem('anthropic_key',k);}
 
 // ---
+function openDrawer(){document.getElementById('drawer').classList.add('open');document.getElementById('drawer-overlay').classList.add('open');}
+function closeDrawer(){document.getElementById('drawer').classList.remove('open');document.getElementById('drawer-overlay').classList.remove('open');}
+function drawerNav(t){closeDrawer();showTab(t);}
+
 function showTab(t){
   var tabs=['preventivi','dettaglio','pagamenti','cashflow','riconciliazione'];
   document.querySelectorAll('.tab').forEach(function(b,i){b.classList.toggle('active',tabs[i]===t);});
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
   document.getElementById('page-'+t).classList.add('active');
+  // Update drawer active state
+  tabs.forEach(function(tab){
+    var el=document.getElementById('di-'+tab);
+    if(el)el.classList.toggle('active',tab===t);
+  });
   renderCurrentTab();
 }
 function renderCurrentTab(){
@@ -410,11 +448,14 @@ function renderCurrentTab(){
 function renderPreventivi(){
   var p=DB.preventivi;
   var acc=p.filter(function(x){return x.stato==='Accettato';});
+  var inVal=p.filter(function(x){return x.stato==='In valutazione';});
+  var totVal=inVal.reduce(function(s,x){return s+parseFloat(x.imponibile||0)*(1+parseFloat(x.iva||22)/100);},0);
   var totImp=acc.reduce(function(s,x){return s+parseFloat(x.imponibile||0);},0);
   var totTot=acc.reduce(function(s,x){return s+parseFloat(x.imponibile||0)*(1+parseFloat(x.iva||22)/100);},0);
   document.getElementById('metrics-prev').innerHTML=
     '<div class="metric"><div class="lbl">Totale preventivi</div><div class="val">'+p.length+'</div></div>'+
     '<div class="metric"><div class="lbl">Accettati</div><div class="val">'+acc.length+'</div></div>'+
+    '<div class="metric"><div class="lbl">In valutazione</div><div class="val" style="font-size:13px;color:var(--amber)">'+inVal.length+' — € '+parseFloat(totVal).toLocaleString('it-IT',{minimumFractionDigits:2})+'</div></div>'+
     '<div class="metric"><div class="lbl">Imponibile accettati</div><div class="val" style="font-size:15px">\u20AC '+parseFloat(totImp).toLocaleString('it-IT',{minimumFractionDigits:2})+'</div></div>'+
     '<div class="metric"><div class="lbl">Totale con IVA</div><div class="val" style="font-size:15px">\u20AC '+parseFloat(totTot).toLocaleString('it-IT',{minimumFractionDigits:2})+'</div></div>';
   if(!p.length){document.getElementById('table-preventivi').innerHTML='<div class="empty">Nessun preventivo. Usa "Nuovo preventivo" per iniziare.</div>';return;}
@@ -424,7 +465,7 @@ function renderPreventivi(){
   p.forEach(function(x){
     var imp=parseFloat(x.imponibile||0),iva=imp*parseFloat(x.iva||22)/100;
     cards+='<div class="prev-card">'+
-      '<div class="pc-top"><div><div class="pc-cat">'+(x.categoria||'\u2014')+'</div><div class="pc-prof">'+(x.professionista||'\u2014')+'</div></div>'+
+      '<div class="pc-top"><div><div class="pc-cat">'+(x.categoria||'\u2014')+'</div><div class="pc-prof">'+(x.professionista||'\u2014')+'</div>'+(x.tipo?'<div style="margin-top:3px"><span class="tipo-badge tipo-'+x.tipo.toLowerCase()+'">'+x.tipo+'</span></div>':'')+'</div>'+
       '<span class="badge '+bc(x.stato)+'">'+x.stato+'</span></div>'+
       '<div class="pc-bottom"><span style="color:var(--text2);font-size:12px">'+(x.data||'\u2014')+' \u00B7 IVA '+(x.iva||22)+'%</span>'+
       '<span class="pc-tot">\u20AC '+parseFloat(imp+iva).toLocaleString('it-IT',{minimumFractionDigits:2})+'</span></div>'+
@@ -440,6 +481,7 @@ function renderPreventivi(){
     var imp=parseFloat(x.imponibile||0),iva=imp*parseFloat(x.iva||22)/100;
     rows+='<tr>'+
       '<td>'+(x.tipo?'<span class="tipo-badge tipo-'+(x.tipo).toLowerCase()+'">'+x.tipo+'</span>':'—')+'</td>'+
+      '<td>'+(x.tipo?'<span class="tipo-badge tipo-'+x.tipo.toLowerCase()+'">'+x.tipo+'</span>':'—')+'</td>'+
       '<td><strong>'+(x.categoria||'\u2014')+'</strong></td>'+
       '<td>'+(x.professionista||'\u2014')+'</td>'+
       '<td>'+(x.data||'\u2014')+'</td>'+
@@ -516,6 +558,34 @@ function savePreventivo(id){
 }
 
 // ---
+window._filesToProcess=[];
+
+function addFile(event){
+  var file=event.target.files[0];
+  if(!file)return;
+  window._filesToProcess.push(file);
+  var list=document.getElementById('file-list');
+  if(list){
+    var tag=document.createElement('span');
+    tag.style.cssText='display:inline-flex;align-items:center;gap:4px;background:var(--bg);border:.5px solid var(--border2);border-radius:var(--radius);padding:3px 8px;font-size:12px';
+    var nm=file.name.length>22?file.name.substr(0,22)+'…':file.name;
+    tag.textContent=(file.type==='application/pdf'?'PDF: ':'Foto: ')+nm;
+    list.appendChild(tag);
+  }
+  var btn=document.getElementById('btn-analyze');
+  if(btn)btn.style.display='';
+  event.target.value='';
+}
+
+async function processFiles(){
+  var files=window._filesToProcess;
+  if(!files||!files.length)return;
+  // delegate to handleFiles-like logic
+  var fakeEvent={target:{files:files}};
+  await handleFiles(fakeEvent);
+  window._filesToProcess=[];
+}
+
 async function handleFiles(event){
   var files=Array.from(event.target.files);
   if(!files.length)return;
