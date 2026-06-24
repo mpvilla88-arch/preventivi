@@ -492,7 +492,7 @@ function renderPreventivi(){
       '<div class="pc-top"><div><div class="pc-cat">'+(x.categoria||'\u2014')+'</div><div class="pc-prof">'+(x.professionista||'\u2014')+'</div>'+(x.tipo?'<div style="margin-top:3px"><span class="tipo-badge tipo-'+x.tipo.toLowerCase()+'">'+x.tipo+'</span></div>':'')+'</div>'+
       '<span class="badge '+bc(x.stato)+'">'+x.stato+'</span></div>'+
       '<div class="pc-bottom"><span style="color:var(--text2);font-size:12px">'+(x.data||'\u2014')+' \u00B7 IVA '+(x.iva||22)+'%</span>'+
-      '<span class="pc-tot">\u20AC '+parseFloat(imp+iva).toLocaleString('it-IT',{minimumFractionDigits:2})+'</span></div>'+
+      '<span class="pc-tot">\u20AC '+parseFloat(imp+cassa+iva).toLocaleString('it-IT',{minimumFractionDigits:2})+'</span></div>'+
       '<div style="display:flex;gap:6px;margin-top:.6rem;justify-content:flex-end">'+
       '<button class="btn sm" onclick="openModalPreventivo(this.dataset.id)" data-id="'+x.id+'"><i class="ti ti-edit"></i> Modifica</button>'+
       '<button class="btn sm" onclick="goDettaglio(this.dataset.id)" data-id="'+x.id+'"><i class="ti ti-list"></i> Dettaglio</button>'+
@@ -508,7 +508,7 @@ function renderPreventivi(){
       '<td><strong>'+(x.categoria||'\u2014')+'</strong></td>'+
       '<td>'+(x.professionista||'\u2014')+'</td>'+
       '<td>'+(x.data?x.data.split('-').reverse().join('/'):'-')+'</td>'+
-      '<td style="text-align:right"><strong>\u20AC '+parseFloat(imp+iva).toLocaleString('it-IT',{minimumFractionDigits:2})+'</strong><br><span style="font-size:10px;color:var(--text2)">imp. \u20AC '+parseFloat(imp).toLocaleString('it-IT',{minimumFractionDigits:2})+'</span></td>'+
+      '<td style="text-align:right"><strong>\u20AC '+parseFloat(imp+cassa+iva).toLocaleString('it-IT',{minimumFractionDigits:2})+'</strong><br><span style="font-size:10px;color:var(--text2)">imp. \u20AC '+parseFloat(imp).toLocaleString('it-IT',{minimumFractionDigits:2})+(cassa>0?' + cassa \u20AC '+parseFloat(cassa).toLocaleString('it-IT',{minimumFractionDigits:2}):'')+'</span></td>'+
       '<td><span class="badge '+bc(x.stato)+'">'+x.stato+'</span></td>'+
       '<td><div class="action-icons">'+
       '<button class="icon-btn" onclick="openModalPreventivo(this.dataset.id)" data-id="'+x.id+'"><i class="ti ti-edit"></i></button>'+
@@ -814,7 +814,7 @@ function renderDettaglio(){
       '<tfoot>'+
       '<tr><td colspan="4">Totale voci</td><td style="text-align:right">\u20AC '+parseFloat(totVoci).toLocaleString('it-IT',{minimumFractionDigits:2})+'</td><td></td></tr>'+
       '<tr><td colspan="4">IVA ('+(x.iva||22)+'%)</td><td style="text-align:right">\u20AC '+parseFloat(imp*parseFloat(x.iva||22)/100).toLocaleString('it-IT',{minimumFractionDigits:2})+'</td><td></td></tr>'+
-      '<tr><td colspan="4"><strong>Totale con IVA</strong></td><td style="text-align:right"><strong>\u20AC '+parseFloat(imp+iva).toLocaleString('it-IT',{minimumFractionDigits:2})+'</strong></td><td></td></tr>'+
+      '<tr><td colspan="4"><strong>Totale con IVA</strong></td><td style="text-align:right"><strong>\u20AC '+parseFloat(imp+cassa+iva).toLocaleString('it-IT',{minimumFractionDigits:2})+'</strong></td><td></td></tr>'+
       '</tfoot></table></div>';
   } else {
     html+='<div class="empty" style="padding:1rem;border:.5px dashed var(--border2);border-radius:var(--radius)">Nessuna voce. Aggiungile manualmente o ricarica il preventivo con il PDF.</div>';
