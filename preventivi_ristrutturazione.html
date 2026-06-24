@@ -526,25 +526,39 @@ async function handleFiles(event){
         blocks.push({type:'image',source:{type:'base64',media_type:file.type,data:b64}});
       }
     }
-    blocks.push({type:'text',text:'Analizza questo preventivo ed estrai i dati in formato JSON puro senza markdown:\n{"categoria":"tipo lavori","professionista":"nome azienda","data":"YYYY-MM-DD","imponibile":numero,"iva":numero,"note":"descrizione breve","voci":[{"descrizione":"...","quantita":numero,"unita":"...","prezzo_unitario":numero,"totale":numero}]}\nEstrai TUTTE le voci. Rispondi SOLO con il JSON.'});
-    status.innerHTML='<i class="ti ti-loader" style="animation:spin 1s linear infinite;display:inline-block"></i> Claude sta analizzando\u2026';
-    var resp=await fetch('https://api.anthropic.com/v1/messages',{
+    // --- CHIAMATA 1: dati principali ---
+    var blocks1=blocks.concat([{type:'text',text:'Analizza questo preventivo ed estrai SOLO i dati principali in JSON puro senza markdown:\n{"categoria":"tipo lavori","professionista":"nome azienda o professionista","data":"YYYY-MM-DD o stringa vuota","imponibile":numero totale,"iva":numero percentuale,"note":"descrizione breve max 2 righe"}\nRispondi SOLO con il JSON.'}]);
+    status.innerHTML='<i class="ti ti-loader" style="animation:spin 1s linear infinite;display:inline-block"></i> Estrazione dati principali\u2026';
+    var resp1=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
       headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:4000,messages:[{role:'user',content:blocks}]})
+      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:500,messages:[{role:'user',content:blocks1}]})
     });
-    if(resp.status===401){localStorage.removeItem('anthropic_key');throw new Error('Chiave API non valida.');}
-    if(!resp.ok)throw new Error('Errore API: '+resp.status);
-    var data=await resp.json();
-    var raw=data.content[0].text.trim().replace(/```json|```/g,'');
-    var parsed=JSON.parse(raw);
+    if(resp1.status===401){localStorage.removeItem('anthropic_key');throw new Error('Chiave API non valida.');}
+    if(!resp1.ok)throw new Error('Errore API: '+resp1.status);
+    var d1=await resp1.json();
+    var parsed=JSON.parse(d1.content[0].text.trim().replace(/```json|```/g,''));
     if(parsed.categoria)document.getElementById('f-cat').value=parsed.categoria;
     if(parsed.professionista)document.getElementById('f-prof').value=parsed.professionista;
     if(parsed.data)document.getElementById('f-data').value=parsed.data;
     if(parsed.imponibile)document.getElementById('f-imp').value=parsed.imponibile;
     if(parsed.iva)document.getElementById('f-iva').value=parsed.iva;
     if(parsed.note)document.getElementById('f-note').value=parsed.note;
-    window._pendingVoci=parsed.voci||[];
+
+    // --- CHIAMATA 2: voci di dettaglio ---
+    status.innerHTML='<i class="ti ti-loader" style="animation:spin 1s linear infinite;display:inline-block"></i> Estrazione voci di dettaglio\u2026';
+    var blocks2=blocks.concat([{type:'text',text:'Estrai TUTTE le voci di dettaglio da questo preventivo in JSON puro senza markdown:\n{"voci":[{"descrizione":"...","quantita":numero o null,"unita":"m/cad/h/m2 o stringa vuota","prezzo_unitario":numero o null,"totale":numero o null}]}\nIncudi ogni riga della tabella. Rispondi SOLO con il JSON.'}]);
+    var resp2=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:4000,messages:[{role:'user',content:blocks2}]})
+    });
+    if(!resp2.ok)throw new Error('Errore API voci: '+resp2.status);
+    var d2=await resp2.json();
+    try{
+      var parsed2=JSON.parse(d2.content[0].text.trim().replace(/```json|```/g,''));
+      window._pendingVoci=parsed2.voci||[];
+    }catch(e2){window._pendingVoci=[];}
     var nv=window._pendingVoci.length;
     status.style.color='var(--green)';
     status.innerHTML='\u2705 Dati estratti'+(nv?' con '+nv+' voci':'')+'. Controlla e salva.';
