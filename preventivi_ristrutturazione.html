@@ -520,6 +520,8 @@ async function handleFiles(event){
       var file=files[i];
       if(file.type==='application/pdf'){
         var txt=await extractPdfText(file);
+        // Trunca il testo PDF a 6000 caratteri per evitare overflow
+        if(txt.length>6000)txt=txt.substr(0,6000)+'\n[testo troncato per lunghezza]';
         blocks.push({type:'text',text:'[PDF: '+file.name+']\n'+txt});
       } else {
         var b64=await fileToBase64(file);
@@ -556,9 +558,21 @@ async function handleFiles(event){
     if(!resp2.ok)throw new Error('Errore API voci: '+resp2.status);
     var d2=await resp2.json();
     try{
-      var parsed2=JSON.parse(d2.content[0].text.trim().replace(/```json|```/g,''));
+      var raw2=d2.content[0].text.trim().replace(/```json|```/g,'').replace(/,\s*}$/,'}').replace(/,\s*]$/,']');
+      // Se il JSON e' troncato, prova a chiuderlo
+      if(!raw2.endsWith('}')&&!raw2.endsWith(']')){
+        var opens=(raw2.match(/\[/g)||[]).length-(raw2.match(/\]/g)||[]).length;
+        var openb=(raw2.match(/\{/g)||[]).length-(raw2.match(/\}/g)||[]).length;
+        for(var ii=0;ii<opens;ii++)raw2+=']';
+        for(var ii=0;ii<openb;ii++)raw2+='}';
+      }
+      var parsed2=JSON.parse(raw2);
       window._pendingVoci=parsed2.voci||[];
-    }catch(e2){window._pendingVoci=[];}
+    }catch(e2){
+      console.warn('Voci parse error:',e2.message);
+      window._pendingVoci=[];
+      status.innerHTML+=' (voci non estratte: preventivo troppo lungo, inseriscile manualmente nel Dettaglio)';
+    }
     var nv=window._pendingVoci.length;
     status.style.color='var(--green)';
     status.innerHTML='\u2705 Dati estratti'+(nv?' con '+nv+' voci':'')+'. Controlla e salva.';
