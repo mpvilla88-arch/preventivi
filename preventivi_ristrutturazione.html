@@ -205,6 +205,7 @@ tfoot td{font-weight:500;background:var(--bg2);border-top:.5px solid var(--borde
   <button class="drawer-item" id="di-pagamenti" onclick="drawerNav('pagamenti')"><i class="ti ti-credit-card"></i> Pagamenti</button>
   <button class="drawer-item" id="di-cashflow" onclick="drawerNav('cashflow')"><i class="ti ti-chart-bar"></i> Cashflow</button>
   <button class="drawer-item" id="di-riconciliazione" onclick="drawerNav('riconciliazione')"><i class="ti ti-receipt"></i> Riconciliazione</button>
+  <button class="drawer-item" id="di-impostazioni" onclick="drawerNav('impostazioni')"><i class="ti ti-settings"></i> Impostazioni</button>
 </div>
 
 <!-- LOGIN -->
@@ -230,6 +231,7 @@ tfoot td{font-weight:500;background:var(--bg2);border-top:.5px solid var(--borde
       <button class="tab" onclick="showTab('pagamenti')">Pagamenti</button>
       <button class="tab" onclick="showTab('cashflow')">Cashflow</button>
       <button class="tab" onclick="showTab('riconciliazione')">Riconciliazione</button>
+      <button class="tab" onclick="showTab('impostazioni')" style="display:none">Impostazioni</button>
     </div>
 
     <!-- PREVENTIVI -->
@@ -298,6 +300,19 @@ tfoot td{font-weight:500;background:var(--bg2);border-top:.5px solid var(--borde
           <h3>Fatture ricevute</h3>
           <button class="btn primary" onclick="openModalFattura()"><i class="ti ti-plus"></i> Registra fattura</button>
         </div>
+
+    <!-- IMPOSTAZIONI -->
+    <div id="page-impostazioni" class="page">
+      <div class="card">
+        <div class="card-header"><h3>Tipi di professionista</h3></div>
+        <div class="alert info"><i class="ti ti-info-circle"></i><span>Personalizza i tipi disponibili nel menu "Tipo professionista" dei preventivi.</span></div>
+        <div id="tipi-list" style="margin-bottom:1rem"></div>
+        <div style="display:flex;gap:8px">
+          <input id="new-tipo" placeholder="es. Paesaggista" style="flex:1;padding:7px 10px;border:.5px solid var(--border2);border-radius:var(--radius);font-size:13px;font-family:inherit;background:var(--bg);color:var(--text)">
+          <button class="btn primary" onclick="addTipo()"><i class="ti ti-plus"></i> Aggiungi</button>
+        </div>
+      </div>
+    </div>
         <div id="table-fatture"></div>
       </div>
     </div>
@@ -325,7 +340,7 @@ const STATI_PAG=['Da pagare','Pagato','Parziale'];
 const TIPI_PAG=['Anticipo','SAL','Saldo','Acconto'];
 const STATI_FAT=['Non ricevuta','Ricevuta','Attesa'];
 
-let DB={preventivi:[],pagamenti:[],fatture:[]};
+let DB={preventivi:[],pagamenti:[],fatture:[],tipiProf:null}; // tipiProf null = use defaults
 let driveFileId=null,accessToken=null,saveTimer=null;
 let tokenClient;
 
@@ -446,7 +461,7 @@ function closeDrawer(){document.getElementById('drawer').classList.remove('open'
 function drawerNav(t){closeDrawer();showTab(t);}
 
 function showTab(t){
-  var tabs=['preventivi','dettaglio','pagamenti','cashflow','riconciliazione'];
+  var tabs=['preventivi','dettaglio','pagamenti','cashflow','riconciliazione','impostazioni'];
   document.querySelectorAll('.tab').forEach(function(b,i){b.classList.toggle('active',tabs[i]===t);});
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
   document.getElementById('page-'+t).classList.add('active');
@@ -466,9 +481,51 @@ function renderCurrentTab(){
   else if(id==='pagamenti')renderPagamenti();
   else if(id==='cashflow')renderCashflow();
   else if(id==='riconciliazione')renderFatture();
+  else if(id==='impostazioni')renderImpostazioni();
 }
 
 // ---
+function getTipi(){
+  return (DB.tipiProf&&DB.tipiProf.length)?DB.tipiProf:['Elettricista','Idraulico','Termotecnico','Muratore','Falegname','Pittore','Serramentista','Geometra','Architetto','Altro'];
+}
+
+function renderImpostazioni(){
+  var tipi=getTipi();
+  var list=document.getElementById('tipi-list');
+  if(!list)return;
+  if(!tipi.length){list.innerHTML='<div class="empty">Nessun tipo. Aggiungine uno sotto.</div>';return;}
+  list.innerHTML=tipi.map(function(t,i){
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:.5px solid var(--border)">'+
+      '<span class="tipo-badge tipo-'+t.toLowerCase().replace(/[^a-z0-9]+/g,'-')+'">'+t+'</span>'+
+      '<button class="icon-btn danger" onclick="removeTipo('+i+')" title="Rimuovi"><i class="ti ti-trash"></i></button>'+
+      '</div>';
+  }).join('');
+}
+
+function addTipo(){
+  var inp=document.getElementById('new-tipo');
+  var val=(inp&&inp.value||'').trim();
+  if(!val)return;
+  var tipi=getTipi().slice(); // copy
+  if(tipi.indexOf(val)>=0){flash('Tipo gi\u00e0 presente.','warning');return;}
+  tipi.push(val);
+  DB.tipiProf=tipi;
+  saveDB();
+  if(inp)inp.value='';
+  renderImpostazioni();
+  flash('Tipo \u201c'+val+'\u201d aggiunto.','success');
+}
+
+function removeTipo(idx){
+  var tipi=getTipi().slice();
+  var nome=tipi[idx];
+  if(!confirm('Rimuovere \u201c'+nome+'\u201d?'))return;
+  tipi.splice(idx,1);
+  DB.tipiProf=tipi;
+  saveDB();
+  renderImpostazioni();
+}
+
 function renderPreventivi(){
   var p=DB.preventivi;
   var acc=p.filter(function(x){return x.stato==='Accettato';});
@@ -553,7 +610,7 @@ function openModalPreventivo(id){
     uploadHtml+
     '<div class="frow c3">'+
     '<div><label>Professionista / Azienda</label><input id="f-prof" value="'+(x&&x.professionista||'')+'" placeholder="es. Idraulica Rossi Srl"></div></div>'+
-    '<select id="f-tipo">'+TIPI_PROF.map(function(t){return '<option value="'+t+'"'+((x&&x.tipo||'Altro')===t?' selected':'')+'>'+t+'</option>';}).join('')+'</select></div>'+
+    '<select id="f-tipo">'+getTipi().map(function(t){return '<option value="'+t+'"'+((x&&x.tipo||'Altro')===t?' selected':'')+'>'+t+'</option>';}).join('')+'</select></div>'+
     '<div><label>Categoria lavori</label><input id="f-cat" value="'+(x&&x.categoria||'')+'" placeholder="es. Impianto idraulico"></div>'+
     '<div><label>Professionista / Azienda</label><input id="f-prof" value="'+(x&&x.professionista||'')+'" placeholder="es. Idraulica Rossi Srl"></div></div>'+
     '<div class="frow c3"><div><label>Data preventivo</label><input id="f-data" type="date" value="'+(x&&x.data||'')+'"></div>'+
