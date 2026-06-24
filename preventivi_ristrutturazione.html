@@ -121,17 +121,7 @@ tfoot td{font-weight:500;background:var(--bg2);border-top:.5px solid var(--borde
 .prev-cards{display:none}
 .prev-table{display:block}
 /* TIPO BADGES */
-.tipo-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;white-space:nowrap;border:.5px solid transparent}
-.tipo-elettricista{background:#E8F0FE;color:#1A56DB}
-.tipo-idraulico{background:#E0F2FE;color:#0369A1}
-.tipo-termotecnico{background:#FEF3C7;color:#92400E}
-.tipo-muratore{background:#F3F4F6;color:#374151}
-.tipo-falegname{background:#FDF4FF;color:#7E22CE}
-.tipo-pittore{background:#F0FDF4;color:#166534}
-.tipo-serramentista{background:#FFF7ED;color:#C2410C}
-.tipo-geometra{background:#EFF6FF;color:#1D4ED8}
-.tipo-architetto{background:#F5F3FF;color:#6D28D9}
-.tipo-altro{background:#F9FAFB;color:#6B7280}
+.tipo-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;white-space:nowrap}
 /* DRIVE */
 .drive-dot{width:7px;height:7px;border-radius:50%;background:var(--text3);display:inline-block;margin-right:4px}
 .drive-dot.ok{background:var(--green)}
@@ -311,9 +301,11 @@ tfoot td{font-weight:500;background:var(--bg2);border-top:.5px solid var(--borde
         <div class="card-header"><h3>Tipi di professionista</h3></div>
         <div class="alert info"><i class="ti ti-info-circle"></i><span>Personalizza i tipi disponibili nel menu "Tipo professionista" dei preventivi.</span></div>
         <div id="tipi-list" style="margin-bottom:1rem"></div>
-        <div style="display:flex;gap:8px">
-          <input id="new-tipo" placeholder="es. Paesaggista" onkeydown="if(event.key==='Enter')addTipo()" style="flex:1;padding:7px 10px;border:.5px solid var(--border2);border-radius:var(--radius);font-size:13px;font-family:inherit;background:var(--bg);color:var(--text)">
-          <button class="btn primary" onclick="addTipo()"><i class="ti ti-plus"></i> Aggiungi</button>
+        <div style="display:grid;grid-template-columns:1fr auto auto auto;gap:8px;align-items:center">
+          <input id="new-tipo" placeholder="es. Paesaggista" onkeydown="if(event.key==='Enter')addTipo()" style="padding:7px 10px;border:.5px solid var(--border2);border-radius:var(--radius);font-size:13px;font-family:inherit;background:var(--bg);color:var(--text);width:100%">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:2px"><label style="font-size:10px;color:var(--text2);margin:0">Sfondo</label><input id="new-tipo-bg" type="color" value="#E8F0FE" style="width:36px;height:32px;border:.5px solid var(--border2);border-radius:var(--radius);cursor:pointer;padding:2px"></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:2px"><label style="font-size:10px;color:var(--text2);margin:0">Testo</label><input id="new-tipo-fg" type="color" value="#1A56DB" style="width:36px;height:32px;border:.5px solid var(--border2);border-radius:var(--radius);cursor:pointer;padding:2px"></div>
+          <button class="btn primary" onclick="addTipo()" style="white-space:nowrap"><i class="ti ti-plus"></i> Aggiungi</button>
         </div>
       </div>
     </div>
@@ -487,8 +479,38 @@ function renderCurrentTab(){
 }
 
 // ---
+var TIPO_COLORS=[
+  {bg:'#E8F0FE',fg:'#1A56DB'},{bg:'#E0F2FE',fg:'#0369A1'},
+  {bg:'#FEF3C7',fg:'#92400E'},{bg:'#F3F4F6',fg:'#374151'},
+  {bg:'#FDF4FF',fg:'#7E22CE'},{bg:'#F0FDF4',fg:'#166534'},
+  {bg:'#FFF7ED',fg:'#C2410C'},{bg:'#EFF6FF',fg:'#1D4ED8'},
+  {bg:'#F5F3FF',fg:'#6D28D9'},{bg:'#ECFDF5',fg:'#065F46'},
+  {bg:'#FFF1F2',fg:'#9F1239'},{bg:'#F7FEE7',fg:'#3F6212'},
+];
+function tipoBadge(tipo){
+  if(!tipo)return '—';
+  var tipi=getTipi();
+  var found=null;
+  for(var k=0;k<tipi.length;k++){
+    var n=typeof tipi[k]==='string'?tipi[k]:tipi[k].nome;
+    if(n===tipo){found=tipi[k];break;}
+  }
+  var bg,fg;
+  if(found&&found.bg){bg=found.bg;fg=found.fg;}
+  else{
+    var idx=0;for(var k=0;k<tipo.length;k++)idx+=tipo.charCodeAt(k);
+    var col=TIPO_COLORS[Math.abs(idx)%TIPO_COLORS.length];
+    bg=col.bg;fg=col.fg;
+  }
+  return '<span class="tipo-badge" style="background:'+bg+';color:'+fg+'">'+tipo+'</span>';
+}
+var DEFAULT_TIPI=['Elettricista','Idraulico','Termotecnico','Muratore','Falegname','Pittore','Serramentista','Geometra','Architetto','Altro'];
 function getTipi(){
-  return (DB.tipiProf&&DB.tipiProf.length)?DB.tipiProf:['Elettricista','Idraulico','Termotecnico','Muratore','Falegname','Pittore','Serramentista','Geometra','Architetto','Altro'];
+  if(!DB.tipiProf||!DB.tipiProf.length) return DEFAULT_TIPI.map(function(n,i){return {nome:n,bg:TIPO_COLORS[i%TIPO_COLORS.length].bg,fg:TIPO_COLORS[i%TIPO_COLORS.length].fg};});
+  return DB.tipiProf;
+}
+function getTipiNomi(){
+  return getTipi().map(function(t){return typeof t==='string'?t:t.nome;});
 }
 
 function renderImpostazioni(){
@@ -498,7 +520,7 @@ function renderImpostazioni(){
   if(!tipi.length){list.innerHTML='<div class="empty">Nessun tipo. Aggiungine uno sotto.</div>';return;}
   list.innerHTML=tipi.map(function(t,i){
     return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:.5px solid var(--border)">'+
-      '<span class="tipo-badge tipo-'+t.toLowerCase().replace(/[^a-z0-9]+/g,'-')+'">'+t+'</span>'+
+      tipoBadge(t)+
       '<button class="icon-btn danger" onclick="removeTipo('+i+')" title="Rimuovi"><i class="ti ti-trash"></i></button>'+
       '</div>';
   }).join('');
@@ -508,10 +530,17 @@ function addTipo(){
   var inp=document.getElementById('new-tipo');
   var val=(inp&&inp.value||'').trim();
   if(!val)return;
-  var tipi=getTipi().slice(); // copy
-  if(tipi.indexOf(val)>=0){flash('Tipo gi\u00e0 presente.','warning');return;}
-  tipi.push(val);
-  DB.tipiProf=tipi;
+  var tipi=getTipi();
+  var nomi=tipi.map(function(t){return typeof t==='string'?t:t.nome;});
+  if(nomi.indexOf(val)>=0){flash('Tipo gi\u00e0 presente.','warning');return;}
+  // Read selected color
+  var bgSel=document.getElementById('new-tipo-bg');
+  var fgSel=document.getElementById('new-tipo-fg');
+  var bg=bgSel?bgSel.value:'#E8F0FE';
+  var fg=fgSel?fgSel.value:'#1A56DB';
+  var newTipi=tipi.slice();
+  newTipi.push({nome:val,bg:bg,fg:fg});
+  DB.tipiProf=newTipi;
   saveDB();
   if(inp)inp.value='';
   renderImpostazioni();
@@ -520,7 +549,8 @@ function addTipo(){
 
 function removeTipo(idx){
   var tipi=getTipi().slice();
-  var nome=tipi[idx];
+  var t=tipi[idx];
+  var nome=typeof t==='string'?t:t.nome;
   if(!confirm('Rimuovere \u201c'+nome+'\u201d?'))return;
   tipi.splice(idx,1);
   DB.tipiProf=tipi;
@@ -548,7 +578,7 @@ function renderPreventivi(){
   p.forEach(function(x){
     var imp=parseFloat(x.imponibile||0),cassa=imp*parseFloat(x.cassa||0)/100,iva=(imp+cassa)*parseFloat(x.iva||22)/100;
     cards+='<div class="prev-card">'+
-      '<div class="pc-top"><div><div class="pc-cat">'+(x.categoria||'\u2014')+'</div><div class="pc-prof">'+(x.professionista||'\u2014')+'</div>'+(x.tipo?'<div style="margin-top:3px"><span class="tipo-badge tipo-'+x.tipo.toLowerCase()+'">'+x.tipo+'</span></div>':'')+'</div>'+
+      '<div class="pc-top"><div><div class="pc-cat">'+(x.categoria||'\u2014')+'</div><div class="pc-prof">'+(x.professionista||'\u2014')+'</div>'+(x.tipo?'<div style="margin-top:3px">'+tipoBadge(x.tipo)+'</div>':'')+'</div>'+
       '<span class="badge '+bc(x.stato)+'">'+x.stato+'</span></div>'+
       '<div class="pc-bottom"><span style="color:var(--text2);font-size:12px">'+(x.data||'\u2014')+' \u00B7 IVA '+(x.iva||22)+'%</span>'+
       '<span class="pc-tot">\u20AC '+parseFloat(imp+cassa+iva).toLocaleString('it-IT',{minimumFractionDigits:2})+'</span></div>'+
@@ -563,7 +593,7 @@ function renderPreventivi(){
   p.forEach(function(x){
     var imp=parseFloat(x.imponibile||0),cassa=imp*parseFloat(x.cassa||0)/100,iva=(imp+cassa)*parseFloat(x.iva||22)/100;
     rows+='<tr>'+
-      '<td>'+(x.tipo?'<span class="tipo-badge tipo-'+x.tipo.toLowerCase()+'">'+x.tipo+'</span>':'\u2014')+'</td>'+
+      '<td>'+tipoBadge(x.tipo)+'</td>'+
       '<td><strong>'+(x.categoria||'\u2014')+'</strong></td>'+
       '<td>'+(x.professionista||'\u2014')+'</td>'+
       '<td>'+(x.data?x.data.split('-').reverse().join('/'):'-')+'</td>'+
@@ -612,7 +642,7 @@ function openModalPreventivo(id){
     uploadHtml+
     '<div class="frow c3">'+
     '<div><label>Professionista / Azienda</label><input id="f-prof" value="'+(x&&x.professionista||'')+'" placeholder="es. Idraulica Rossi Srl"></div></div>'+
-    '<select id="f-tipo">'+getTipi().map(function(t){return '<option value="'+t+'"'+((x&&x.tipo||'Altro')===t?' selected':'')+'>'+t+'</option>';}).join('')+'</select></div>'+
+    '<select id="f-tipo">'+getTipiNomi().map(function(t){return '<option value="'+t+'"'+((x&&x.tipo||'Altro')===t?' selected':'')+'>'+t+'</option>';}).join('')+'</select></div>'+
     '<div><label>Categoria lavori</label><input id="f-cat" value="'+(x&&x.categoria||'')+'" placeholder="es. Impianto idraulico"></div>'+
     '<div><label>Professionista / Azienda</label><input id="f-prof" value="'+(x&&x.professionista||'')+'" placeholder="es. Idraulica Rossi Srl"></div></div>'+
     '<div class="frow c3"><div><label>Data preventivo</label><input id="f-data" type="date" value="'+(x&&x.data||'')+'"></div>'+
