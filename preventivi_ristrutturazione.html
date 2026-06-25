@@ -760,20 +760,24 @@ function renderVoci(){
   var cards=voci.map(function(vv,vi){
     return '<div style="background:var(--bg2);border:.5px solid var(--border);border-left:3px solid var(--blue);border-radius:12px;padding:1.25rem;margin-bottom:1rem">'+
       '<div style="font-size:14px;font-weight:500;line-height:1.5;margin-bottom:1rem;padding-bottom:.875rem;border-bottom:.5px solid var(--border);color:var(--text)">'+(vv.descrizione||'\u2014')+'</div>'+
-      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:.625rem;margin-bottom:.75rem">'+
-      '<div style="background:var(--bg);border-radius:8px;padding:.75rem">'+
-      '<div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Quantit\u00e0</div>'+
-      '<div style="font-size:18px;font-weight:500;color:var(--text)">'+(vv.quantita!=null?vv.quantita:'-')+'<span style="font-size:11px;color:var(--text2);margin-left:4px">'+(vv.unita||'')+'</span></div>'+
-      '</div>'+
-      '<div style="background:var(--bg);border-radius:8px;padding:.75rem">'+
-      '<div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Prezzo unit.</div>'+
-      '<div style="font-size:14px;font-weight:500;color:var(--text)">'+(vv.prezzo_unitario!=null?'\u20AC '+parseFloat(vv.prezzo_unitario).toLocaleString('it-IT',{minimumFractionDigits:2}):'\u2014')+'</div>'+
-      '</div>'+
-      '</div>'+
-      '<div style="background:var(--bg);border-radius:8px;padding:.875rem;margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center">'+
-      '<span style="font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:.04em">Totale riga</span>'+
-      '<span style="font-size:20px;font-weight:500;color:var(--text)">'+(vv.totale!=null?'\u20AC '+parseFloat(vv.totale).toLocaleString('it-IT',{minimumFractionDigits:2}):'\u2014')+'</span>'+
-      '</div>'+
+      ((vv.quantita!=null||vv.prezzo_unitario!=null)?
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:.625rem;margin-bottom:.75rem">'+
+        (vv.quantita!=null?
+          '<div style="background:var(--bg);border-radius:8px;padding:.75rem">'+
+          '<div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Quantit\u00e0</div>'+
+          '<div style="font-size:18px;font-weight:500;color:var(--text)">'+vv.quantita+'<span style="font-size:11px;color:var(--text2);margin-left:4px">'+(vv.unita||'')+'</span></div>'+
+          '</div>':'<div></div>')+
+        (vv.prezzo_unitario!=null?
+          '<div style="background:var(--bg);border-radius:8px;padding:.75rem">'+
+          '<div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Prezzo unit.</div>'+
+          '<div style="font-size:14px;font-weight:500;color:var(--text)">\u20AC '+parseFloat(vv.prezzo_unitario).toLocaleString('it-IT',{minimumFractionDigits:2})+'</div>'+
+          '</div>':'<div></div>')+
+        '</div>':'')+
+      (vv.totale!=null?
+        '<div style="background:var(--bg);border-radius:8px;padding:.875rem;margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center">'+
+        '<span style="font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:.04em">Totale riga</span>'+
+        '<span style="font-size:20px;font-weight:500;color:var(--text)">\u20AC '+parseFloat(vv.totale).toLocaleString('it-IT',{minimumFractionDigits:2})+'</span>'+
+        '</div>':'')+
       '<div style="padding-top:.875rem;border-top:.5px solid var(--border);display:flex;gap:8px;justify-content:flex-end">'+
       '<button class="btn sm" onclick="editVoceFromVoci(\''+id+'\','+vi+')"><i class="ti ti-edit"></i> Modifica</button>'+
       '<button class="btn sm danger" onclick="deleteVoceAndRefresh(\''+id+'\','+vi+')"><i class="ti ti-trash"></i></button>'+
