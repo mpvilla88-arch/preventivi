@@ -882,16 +882,21 @@ function renderDettaglio(){
     // Mobile cards for rate
     var rateCards=rate.map(function(r,ri){
       return '<div class="m-card">'+
-        '<div class="m-card-head"><div class="m-card-title">'+(r.descrizione||'\u2014')+'</div>'+
-        '<span class="badge '+bc(r.stato||'Da pagare')+'">'+( r.stato||'Da pagare')+'</span></div>'+
-        '<div class="m-card-row"><span class="m-card-label">Data</span><span>'+(r.data||'\u2014')+'</span></div>'+
-        '<div class="m-card-row"><span class="m-card-label">Importo</span><span class="m-card-value">\u20AC '+parseFloat(r.importo||0).toLocaleString('it-IT',{minimumFractionDigits:2})+'</span></div>'+
-        (r.stato!=='Pagato'?'<div class="m-card-actions"><button class="btn sm" onclick="openModalRata(\''+id+'\','+ri+')"><i class="ti ti-edit"></i></button>'+
+        '<div class="m-card-head">'+
+        '<div><div class="m-card-title">'+(r.descrizione||'\u2014')+'</div></div>'+
+        '<span class="badge '+bc(r.stato||'Da pagare')+'">'+( r.stato||'Da pagare')+'</span>'+
+        '</div>'+
+        '<div class="m-card-fields">'+
+        '<div class="m-card-field"><span class="m-card-label">Data prevista</span><span class="m-card-value">'+(r.data||'\u2014')+'</span></div>'+
+        '<div class="m-card-field"><span class="m-card-label">Importo</span><span class="m-card-value big">\u20AC '+parseFloat(r.importo||0).toLocaleString('it-IT',{minimumFractionDigits:2})+'</span></div>'+
+        '</div>'+
+        (r.stato!=='Pagato'?'<div class="m-card-actions"><button class="btn sm" onclick="openModalRata(\''+id+'\','+ri+')"><i class="ti ti-edit"></i> Modifica</button>'+
         '<button class="btn sm danger" onclick="deleteRata(\''+id+'\','+ri+')"><i class="ti ti-trash"></i></button></div>':'')+
         '</div>';
     }).join('');
-    html+='<div class="mobile-only">'+rateCards+'<div class="m-section-total">Totale rate: <strong>\u20AC '+parseFloat(totRate).toLocaleString('it-IT',{minimumFractionDigits:2})+'</strong></div></div>'+
-      '<div class="desktop-only"><div class="tbl-wrap" style="margin-bottom:1.25rem"><table>'+
+    html+='<div class="mobile-only">'+rateCards+'<div class="m-section-total"><span>Totale rate</span><strong>\u20AC '+parseFloat(totRate).toLocaleString('it-IT',{minimumFractionDigits:2})+'</strong></div></div>';
+    // Desktop: skip tfoot total (already in cards above) - show table only
+    html+='<div class="desktop-only"><div class="tbl-wrap" style="margin-bottom:1.25rem"><table>'+
       '<thead><tr><th>Descrizione</th><th style="text-align:right">Importo</th><th>Data prevista</th><th>Stato</th><th></th></tr></thead>'+
       '<tbody>'+rateRows+'</tbody>'+
       '<tfoot><tr><td>Totale rate</td><td style="text-align:right"><strong>\u20AC '+parseFloat(totRate).toLocaleString('it-IT',{minimumFractionDigits:2})+'</strong></td><td colspan="3"></td></tr></tfoot>'+
@@ -920,11 +925,15 @@ function renderDettaglio(){
     // Mobile cards
     var voceCards=voci.map(function(vv,vi){
       return '<div class="m-card">'+
-        '<div class="m-card-title" style="margin-bottom:.4rem">'+(vv.descrizione||'\u2014')+'</div>'+
-        '<div class="m-card-row"><span class="m-card-label">Qt\u00e0</span><span>'+(vv.quantita!=null?vv.quantita:'-')+' '+(vv.unita||'')+'</span></div>'+
-        '<div class="m-card-row"><span class="m-card-label">Prezzo unit.</span><span>'+(vv.prezzo_unitario!=null?'\u20AC '+parseFloat(vv.prezzo_unitario).toLocaleString('it-IT',{minimumFractionDigits:2}):'\u2014')+'</span></div>'+
-        '<div class="m-card-row"><span class="m-card-label">Totale</span><span class="m-card-value">'+(vv.totale!=null?'\u20AC '+parseFloat(vv.totale).toLocaleString('it-IT',{minimumFractionDigits:2}):'\u2014')+'</span></div>'+
-        '<div class="m-card-actions"><button class="btn sm danger" onclick="deleteVoce(\''+id+'\','+vi+')"><i class="ti ti-trash"></i></button></div>'+
+        '<div class="m-card-head" style="margin-bottom:.75rem">'+
+        '<div class="m-card-title">'+(vv.descrizione||'\u2014')+'</div>'+
+        '</div>'+
+        '<div class="m-card-fields">'+
+        '<div class="m-card-field"><span class="m-card-label">Qt\u00e0</span><span class="m-card-value">'+(vv.quantita!=null?vv.quantita:'-')+' '+(vv.unita||'')+'</span></div>'+
+        '<div class="m-card-field"><span class="m-card-label">Prezzo unit.</span><span class="m-card-value">'+(vv.prezzo_unitario!=null?'\u20AC '+parseFloat(vv.prezzo_unitario).toLocaleString('it-IT',{minimumFractionDigits:2}):'\u2014')+'</span></div>'+
+        '<div class="m-card-field full"><span class="m-card-label">Totale riga</span><span class="m-card-value big">'+(vv.totale!=null?'\u20AC '+parseFloat(vv.totale).toLocaleString('it-IT',{minimumFractionDigits:2}):'\u2014')+'</span></div>'+
+        '</div>'+
+        '<div class="m-card-actions"><button class="btn sm danger" onclick="deleteVoce(\''+id+'\','+vi+')"><i class="ti ti-trash"></i> Rimuovi</button></div>'+
         '</div>';
     }).join('');
     html+=
@@ -1092,15 +1101,19 @@ function renderPagamenti(){
     var cat=prev&&prev.categoria||x.categoria||'\u2014';
     var prof=prev&&prev.professionista||x.professionista||'\u2014';
     return '<div class="m-card">'+
-      '<div class="m-card-head"><div><div class="m-card-title">'+cat+'</div><div class="m-card-sub">'+prof+'</div></div>'+
-      '<span class="badge '+bc(x.stato)+'">'+x.stato+'</span></div>'+
-      '<div class="m-card-row"><span class="m-card-label">Tipo</span><span class="badge '+bc(x.tipo)+'">'+(x.tipo||'\u2014')+'</span></div>'+
-      '<div class="m-card-row"><span class="m-card-label">Data</span><span>'+(x.data||'\u2014')+'</span></div>'+
-      '<div class="m-card-row"><span class="m-card-label">Importo</span><span class="m-card-value">\u20AC '+parseFloat(x.importo||0).toLocaleString('it-IT',{minimumFractionDigits:2})+'</span></div>'+
-      (x.riferimento?'<div class="m-card-row"><span class="m-card-label">CRO</span><span style="font-size:12px">'+x.riferimento+'</span></div>':'')+
-      (x.note?'<div class="m-card-row"><span class="m-card-label">Note</span><span style="font-size:12px">'+x.note+'</span></div>':'')+
+      '<div class="m-card-head">'+
+      '<div><div class="m-card-title">'+cat+'</div><div class="m-card-sub">'+prof+'</div></div>'+
+      '<span class="badge '+bc(x.stato)+'">'+x.stato+'</span>'+
+      '</div>'+
+      '<div class="m-card-fields">'+
+      '<div class="m-card-field"><span class="m-card-label">Data</span><span class="m-card-value">'+(x.data||'\u2014')+'</span></div>'+
+      '<div class="m-card-field"><span class="m-card-label">Tipo</span><span class="badge '+bc(x.tipo)+'">'+(x.tipo||'\u2014')+'</span></div>'+
+      '<div class="m-card-field full"><span class="m-card-label">Importo</span><span class="m-card-value big">\u20AC '+parseFloat(x.importo||0).toLocaleString('it-IT',{minimumFractionDigits:2})+'</span></div>'+
+      (x.riferimento?'<div class="m-card-field full"><span class="m-card-label">Rif. CRO</span><span class="m-card-value">'+x.riferimento+'</span></div>':'')+
+      (x.note?'<div class="m-card-field full"><span class="m-card-label">Note</span><span class="m-card-value">'+x.note+'</span></div>':'')+
+      '</div>'+
       '<div class="m-card-actions">'+
-      '<button class="btn sm" onclick="openModalPagamento(\''+x.id+'\')"  ><i class="ti ti-edit"></i></button>'+
+      '<button class="btn sm" onclick="openModalPagamento(\''+x.id+'\')" ><i class="ti ti-edit"></i> Modifica</button>'+
       '<button class="btn sm danger" onclick="deleteItem(\'pagamenti\',\''+x.id+'\',renderPagamenti)"><i class="ti ti-trash"></i></button>'+
       '</div></div>';
   }).join('');
@@ -1261,16 +1274,19 @@ function renderScadenze(months){
   // Mobile cards for scadenze
   var scCards=pg.map(function(x){
     var prev=DB.preventivi.find(function(p){return p.id===x.prevId;});
-    var dStr=new Date(x.data).toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'2-digit'});
+    var dStr=new Date(x.data).toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'});
     var dayDiff=Math.round((new Date(x.data)-now)/(1000*60*60*24));
-    var warn=dayDiff<=0?'\u26a0\ufe0f Scaduta':dayDiff<=7?'Fra '+dayDiff+' gg':'';
+    var warn=dayDiff<=0?'⚠️ Scaduta':dayDiff<=7?'Fra '+dayDiff+' gg':'';
     return '<div class="m-card">'+
-      '<div class="m-card-head"><div><div class="m-card-title">'+(prev&&prev.categoria||x.categoria||'\u2014')+'</div>'+
-      '<div class="m-card-sub">'+(prev&&prev.professionista||x.professionista||'\u2014')+'</div></div>'+
-      '<span class="badge '+bc(x.stato)+'">'+x.stato+'</span></div>'+
-      '<div class="m-card-row"><span class="m-card-label">Data</span><span>'+dStr+(warn?' <span style="color:var(--amber);font-size:11px;font-weight:500">'+warn+'</span>':'')+'</span></div>'+
-      '<div class="m-card-row"><span class="m-card-label">Importo</span><span class="m-card-value">\u20AC '+parseFloat(x.importo||0).toLocaleString('it-IT',{minimumFractionDigits:2})+'</span></div>'+
-      (x.note?'<div class="m-card-row"><span class="m-card-label">Note</span><span style="font-size:12px">'+x.note+'</span></div>':'')+
+      '<div class="m-card-head">'+
+      '<div><div class="m-card-title">'+(prev&&prev.categoria||x.categoria||'—')+'</div><div class="m-card-sub">'+(prev&&prev.professionista||x.professionista||'—')+'</div></div>'+
+      '<span class="badge '+bc(x.stato)+'">'+x.stato+'</span>'+
+      '</div>'+
+      '<div class="m-card-fields">'+
+      '<div class="m-card-field"><span class="m-card-label">Data scadenza</span><span class="m-card-value">'+dStr+'</span>'+(warn?'<span style="display:block;margin-top:3px;color:var(--amber);font-size:11px;font-weight:500">'+warn+'</span>':'')+'</div>'+
+      '<div class="m-card-field"><span class="m-card-label">Importo</span><span class="m-card-value big">€ '+parseFloat(x.importo||0).toLocaleString('it-IT',{minimumFractionDigits:2})+'</span></div>'+
+      (x.note?'<div class="m-card-field full"><span class="m-card-label">Note</span><span class="m-card-value">'+x.note+'</span></div>':'')+
+      '</div>'+
       '</div>';
   }).join('');
   var scTotale='<div class="m-section-total">Totale: <strong>\u20AC '+parseFloat(tot).toLocaleString('it-IT',{minimumFractionDigits:2})+'</strong></div>';
@@ -1294,17 +1310,20 @@ function renderFatture(){
   // Mobile cards
   var cards=ft.map(function(x){
     var pag=DB.pagamenti.find(function(p){return p.id===x.pagId;});
-    var bon=pag?pag.tipo+' '+( pag.data||'')+' CRO: '+(pag.riferimento||'\u2014'):'non collegato';
+    var bon=pag?pag.tipo+' '+( pag.data||'')+' · CRO: '+(pag.riferimento||'—'):'non collegato';
     return '<div class="m-card">'+
-      '<div class="m-card-head"><div><div class="m-card-title">'+(x.emittente||'\u2014')+'</div>'+
-      '<div class="m-card-sub">'+(x.descrizione||'\u2014')+'</div></div>'+
-      '<span class="badge '+bc(x.statoFattura)+'">'+x.statoFattura+'</span></div>'+
-      '<div class="m-card-row"><span class="m-card-label">N\u00b0 fattura</span><span>'+(x.numero||'\u2014')+'</span></div>'+
-      '<div class="m-card-row"><span class="m-card-label">Data</span><span>'+(x.data||'\u2014')+'</span></div>'+
-      '<div class="m-card-row"><span class="m-card-label">Importo</span><span class="m-card-value">\u20AC '+parseFloat(x.importo||0).toLocaleString('it-IT',{minimumFractionDigits:2})+'</span></div>'+
-      '<div class="m-card-row"><span class="m-card-label">Bonifico</span><span style="font-size:11px;color:var(--text2)">'+bon+'</span></div>'+
+      '<div class="m-card-head">'+
+      '<div><div class="m-card-title">'+(x.emittente||'—')+'</div><div class="m-card-sub">'+(x.descrizione||'—')+'</div></div>'+
+      '<span class="badge '+bc(x.statoFattura)+'">'+x.statoFattura+'</span>'+
+      '</div>'+
+      '<div class="m-card-fields">'+
+      '<div class="m-card-field"><span class="m-card-label">N° fattura</span><span class="m-card-value">'+(x.numero||'—')+'</span></div>'+
+      '<div class="m-card-field"><span class="m-card-label">Data</span><span class="m-card-value">'+(x.data||'—')+'</span></div>'+
+      '<div class="m-card-field full"><span class="m-card-label">Importo</span><span class="m-card-value big">€ '+parseFloat(x.importo||0).toLocaleString('it-IT',{minimumFractionDigits:2})+'</span></div>'+
+      '<div class="m-card-field full"><span class="m-card-label">Bonifico collegato</span><span class="m-card-value">'+bon+'</span></div>'+
+      '</div>'+
       '<div class="m-card-actions">'+
-      '<button class="btn sm" onclick="openModalFattura(\''+x.id+'\')"  ><i class="ti ti-edit"></i></button>'+
+      '<button class="btn sm" onclick="openModalFattura(\''+x.id+'\')"  ><i class="ti ti-edit"></i> Modifica</button>'+
       '<button class="btn sm danger" onclick="deleteItem(\'fatture\',\''+x.id+'\',renderFatture)"><i class="ti ti-trash"></i></button>'+
       '</div></div>';
   }).join('');
