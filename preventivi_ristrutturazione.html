@@ -192,6 +192,8 @@ tfoot td{font-weight:500;background:var(--bg2);border-top:.5px solid var(--borde
   </div>
   <button class="drawer-item active" id="di-preventivi" onclick="drawerNav('preventivi')"><i class="ti ti-file-text"></i> Preventivi</button>
   <button class="drawer-item" id="di-dettaglio" onclick="drawerNav('dettaglio')"><i class="ti ti-list-details"></i> Dettaglio</button>
+  <button class="drawer-item" id="di-rate" onclick="drawerNav('rate')"><i class="ti ti-calendar-due"></i> Piano pagamenti</button>
+  <button class="drawer-item" id="di-voci" onclick="drawerNav('voci')"><i class="ti ti-list-numbers"></i> Voci preventivo</button>
   <button class="drawer-item" id="di-pagamenti" onclick="drawerNav('pagamenti')"><i class="ti ti-credit-card"></i> Pagamenti</button>
   <button class="drawer-item" id="di-cashflow" onclick="drawerNav('cashflow')"><i class="ti ti-chart-bar"></i> Cashflow</button>
   <button class="drawer-item" id="di-riconciliazione" onclick="drawerNav('riconciliazione')"><i class="ti ti-receipt"></i> Riconciliazione</button>
@@ -218,6 +220,8 @@ tfoot td{font-weight:500;background:var(--bg2);border-top:.5px solid var(--borde
     <div class="tabs">
       <button class="tab active" onclick="showTab('preventivi')">Preventivi</button>
       <button class="tab" onclick="showTab('dettaglio')">Dettaglio</button>
+      <button class="tab" onclick="showTab('rate')">Pagamenti</button>
+      <button class="tab" onclick="showTab('voci')">Voci</button>
       <button class="tab" onclick="showTab('pagamenti')">Pagamenti</button>
       <button class="tab" onclick="showTab('cashflow')">Cashflow</button>
       <button class="tab" onclick="showTab('riconciliazione')">Riconciliazione</button>
@@ -246,6 +250,38 @@ tfoot td{font-weight:500;background:var(--bg2);border-top:.5px solid var(--borde
           </select>
         </div>
         <div id="dettaglio-content"><div class="empty">Seleziona un preventivo dal menu in alto.</div></div>
+      </div>
+    </div>
+
+    <!-- RATE -->
+    <div id="page-rate" class="page">
+      <div class="card">
+        <div class="card-header">
+          <h3>Piano pagamenti</h3>
+          <div style="display:flex;gap:8px;align-items:center">
+            <select id="rate-select" onchange="renderRate()" style="font-size:13px;padding:6px 10px;border:.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);max-width:220px">
+              <option value="">— Seleziona preventivo —</option>
+            </select>
+            <button class="btn primary sm" id="btn-add-rata" onclick="addRataFromRate()" style="display:none"><i class="ti ti-plus"></i> Aggiungi</button>
+          </div>
+        </div>
+        <div id="rate-content"><div class="empty">Seleziona un preventivo per vedere il piano pagamenti.</div></div>
+      </div>
+    </div>
+
+    <!-- VOCI -->
+    <div id="page-voci" class="page">
+      <div class="card">
+        <div class="card-header">
+          <h3>Voci di dettaglio</h3>
+          <div style="display:flex;gap:8px;align-items:center">
+            <select id="voci-select" onchange="renderVoci()" style="font-size:13px;padding:6px 10px;border:.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);max-width:220px">
+              <option value="">— Seleziona preventivo —</option>
+            </select>
+            <button class="btn sm" id="btn-add-voce" onclick="addVoceFromVoci()" style="display:none"><i class="ti ti-plus"></i> Aggiungi</button>
+          </div>
+        </div>
+        <div id="voci-content"><div class="empty">Seleziona un preventivo per vedere le voci.</div></div>
       </div>
     </div>
 
@@ -455,7 +491,7 @@ function closeDrawer(){document.getElementById('drawer').classList.remove('open'
 function drawerNav(t){closeDrawer();showTab(t);}
 
 function showTab(t){
-  var tabs=['preventivi','dettaglio','pagamenti','cashflow','riconciliazione','impostazioni'];
+  var tabs=['preventivi','dettaglio','rate','voci','pagamenti','cashflow','riconciliazione','impostazioni'];
   document.querySelectorAll('.tab').forEach(function(b,i){b.classList.toggle('active',tabs[i]===t);});
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
   document.getElementById('page-'+t).classList.add('active');
@@ -474,6 +510,8 @@ function renderCurrentTab(){
   else if(id==='dettaglio'){populateDettaglioSelect();renderDettaglio();}
   else if(id==='pagamenti')renderPagamenti();
   else if(id==='cashflow')renderCashflow();
+  else if(id==='rate'){populateRateSelect();renderRate();}
+  else if(id==='voci'){populateVociSelect();renderVoci();}
   else if(id==='riconciliazione')renderFatture();
   else if(id==='impostazioni')renderImpostazioni();
 }
@@ -563,6 +601,169 @@ function removeTipo(idx){
   DB.tipiProf=tipi;
   saveDB();
   renderImpostazioni();
+}
+
+
+function goToRate(id){
+  showTab('rate');
+  setTimeout(function(){
+    var sel=document.getElementById('rate-select');
+    if(sel){sel.value=id;renderRate();}
+  },50);
+}
+function goToVoci(id){
+  showTab('voci');
+  setTimeout(function(){
+    var sel=document.getElementById('voci-select');
+    if(sel){sel.value=id;renderVoci();}
+  },50);
+}
+
+function populateRateSelect(){
+  var sel=document.getElementById('rate-select');
+  if(!sel)return;
+  var cur=sel.value;
+  sel.innerHTML='<option value="">\u2014 Seleziona preventivo \u2014</option>';
+  DB.preventivi.forEach(function(x){
+    var opt=document.createElement('option');
+    opt.value=x.id;
+    opt.textContent=(x.tipo||'\u2014')+' \u2014 '+(x.professionista||'\u2014');
+    if(x.id===cur)opt.selected=true;
+    sel.appendChild(opt);
+  });
+}
+
+function renderRate(){
+  var sel=document.getElementById('rate-select');
+  var container=document.getElementById('rate-content');
+  var btnAdd=document.getElementById('btn-add-rata');
+  if(!sel||!container)return;
+  var id=sel.value;
+  if(btnAdd)btnAdd.style.display=id?'':'none';
+  if(!id){container.innerHTML='<div class="empty">Seleziona un preventivo per vedere il piano pagamenti.</div>';return;}
+  var x=DB.preventivi.find(function(p){return p.id===id;});
+  if(!x){container.innerHTML='<div class="empty">Preventivo non trovato.</div>';return;}
+  var rate=x.rate||[];
+  var imp=parseFloat(x.imponibile||0),ca=imp*parseFloat(x.cassa||0)/100,iva=(imp+ca)*parseFloat(x.iva||22)/100;
+  var totPrev=imp+ca+iva;
+  var totRate=rate.reduce(function(s,r){return s+parseFloat(r.importo||0);},0);
+  var totPagato=rate.filter(function(r){return r.stato==='Pagato';}).reduce(function(s,r){return s+parseFloat(r.importo||0);},0);
+
+  // Summary metrics
+  var html='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1.25rem">'+
+    '<div class="metric"><div class="lbl">Totale preventivo</div><div class="val" style="font-size:15px">\u20AC '+parseFloat(totPrev).toLocaleString('it-IT',{minimumFractionDigits:2})+'</div></div>'+
+    '<div class="metric"><div class="lbl">Totale rate</div><div class="val" style="font-size:15px">\u20AC '+parseFloat(totRate).toLocaleString('it-IT',{minimumFractionDigits:2})+'</div></div>'+
+    '<div class="metric"><div class="lbl">Gi\u00e0 pagato</div><div class="val" style="font-size:15px;color:var(--green)">\u20AC '+parseFloat(totPagato).toLocaleString('it-IT',{minimumFractionDigits:2})+'</div></div>'+
+    '<div class="metric"><div class="lbl">Da pagare</div><div class="val" style="font-size:15px;color:var(--amber)">\u20AC '+parseFloat(Math.max(0,totRate-totPagato)).toLocaleString('it-IT',{minimumFractionDigits:2})+'</div></div>'+
+    '</div>';
+
+  if(!rate.length){
+    html+='<div class="empty" style="padding:1.5rem;border:.5px dashed var(--border2);border-radius:var(--radius)">Nessuna rata definita. Usa il pulsante Aggiungi.</div>';
+  } else {
+    html+=rate.map(function(r,ri){
+      var isPagato=r.stato==='Pagato';
+      return '<div class="m-card">'+
+        '<div class="m-card-head">'+
+        '<div style="flex:1"><div class="m-card-title">'+(r.descrizione||'\u2014')+'</div></div>'+
+        '<span class="badge '+bc(r.stato||'Da pagare')+'">'+(r.stato||'Da pagare')+'</span>'+
+        '</div>'+
+        '<div class="m-card-fields">'+
+        '<div class="m-card-field"><span class="m-card-label">Data prevista</span><span class="m-card-value">'+(r.data||'\u2014')+'</span></div>'+
+        '<div class="m-card-field"><span class="m-card-label">Importo</span><span class="m-card-value big">\u20AC '+parseFloat(r.importo||0).toLocaleString('it-IT',{minimumFractionDigits:2})+'</span></div>'+
+        '</div>'+
+        (!isPagato?
+          '<div class="m-card-actions">'+
+          '<button class="btn sm" onclick="openModalRata(\''+id+'\','+ri+')"><i class="ti ti-edit"></i> Modifica</button>'+
+          '<button class="btn sm danger" onclick="deleteRataAndRefresh(\''+id+'\','+ri+')"><i class="ti ti-trash"></i></button>'+
+          '</div>':'')+
+        '</div>';
+    }).join('');
+  }
+  container.innerHTML=html;
+}
+
+function addRataFromRate(){
+  var id=document.getElementById('rate-select')&&document.getElementById('rate-select').value;
+  if(!id)return;
+  openModalRata(id);
+  // After modal closes, re-render rate page
+  var origClose=window._origCloseModal||closeModal;
+  window._rateRefreshId=id;
+}
+
+function deleteRataAndRefresh(prevId,idx){
+  var x=DB.preventivi.find(function(p){return p.id===prevId;});
+  if(!x||!x.rate)return;
+  if(confirm('Eliminare questa rata?')){x.rate.splice(idx,1);saveDB();renderRate();}
+}
+
+function populateVociSelect(){
+  var sel=document.getElementById('voci-select');
+  if(!sel)return;
+  var cur=sel.value;
+  sel.innerHTML='<option value="">\u2014 Seleziona preventivo \u2014</option>';
+  DB.preventivi.forEach(function(x){
+    var opt=document.createElement('option');
+    opt.value=x.id;
+    opt.textContent=(x.tipo||'\u2014')+' \u2014 '+(x.professionista||'\u2014');
+    if(x.id===cur)opt.selected=true;
+    sel.appendChild(opt);
+  });
+}
+
+function renderVoci(){
+  var sel=document.getElementById('voci-select');
+  var container=document.getElementById('voci-content');
+  var btnAdd=document.getElementById('btn-add-voce');
+  if(!sel||!container)return;
+  var id=sel.value;
+  if(btnAdd)btnAdd.style.display=id?'':'none';
+  if(!id){container.innerHTML='<div class="empty">Seleziona un preventivo per vedere le voci.</div>';return;}
+  var x=DB.preventivi.find(function(p){return p.id===id;});
+  if(!x){container.innerHTML='<div class="empty">Preventivo non trovato.</div>';return;}
+  var voci=x.voci||[];
+  var imp=parseFloat(x.imponibile||0),ca=imp*parseFloat(x.cassa||0)/100,iva=(imp+ca)*parseFloat(x.iva||22)/100;
+  var totVoci=voci.reduce(function(s,v){return s+parseFloat(v.totale||0);},0);
+
+  if(!voci.length){
+    container.innerHTML='<div class="empty" style="padding:1.5rem;border:.5px dashed var(--border2);border-radius:var(--radius)">Nessuna voce. Usa il pulsante Aggiungi o ricarica il preventivo con il PDF.</div>';
+    return;
+  }
+
+  var cards=voci.map(function(vv,vi){
+    return '<div class="m-card">'+
+      '<div style="font-weight:500;font-size:14px;margin-bottom:.75rem;line-height:1.4">'+(vv.descrizione||'\u2014')+'</div>'+
+      '<div class="m-card-fields">'+
+      '<div class="m-card-field"><span class="m-card-label">Quantit\u00e0</span><span class="m-card-value">'+(vv.quantita!=null?vv.quantita:'-')+' '+(vv.unita||'')+'</span></div>'+
+      '<div class="m-card-field"><span class="m-card-label">Prezzo unit.</span><span class="m-card-value">'+(vv.prezzo_unitario!=null?'\u20AC '+parseFloat(vv.prezzo_unitario).toLocaleString('it-IT',{minimumFractionDigits:2}):'\u2014')+'</span></div>'+
+      '<div class="m-card-field full"><span class="m-card-label">Totale riga</span><span class="m-card-value big">'+(vv.totale!=null?'\u20AC '+parseFloat(vv.totale).toLocaleString('it-IT',{minimumFractionDigits:2}):'\u2014')+'</span></div>'+
+      '</div>'+
+      '<div class="m-card-actions"><button class="btn sm danger" onclick="deleteVoceAndRefresh(\''+id+'\','+vi+')"><i class="ti ti-trash"></i> Rimuovi</button></div>'+
+      '</div>';
+  }).join('');
+
+  // Summary totals (instead of table)
+  var summary='<div style="background:var(--bg2);border-radius:var(--radius-lg);padding:1rem;margin-top:.5rem">'+
+    '<div style="font-size:12px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.75rem">Riepilogo</div>'+
+    '<div style="display:flex;justify-content:space-between;padding:.4rem 0;border-bottom:.5px solid var(--border)"><span style="color:var(--text2)">Totale voci</span><strong>\u20AC '+parseFloat(totVoci).toLocaleString('it-IT',{minimumFractionDigits:2})+'</strong></div>'+
+    (ca>0?'<div style="display:flex;justify-content:space-between;padding:.4rem 0;border-bottom:.5px solid var(--border)"><span style="color:var(--text2)">Cassa prev. ('+(x.cassa||0)+'%)</span><strong>\u20AC '+parseFloat(ca).toLocaleString('it-IT',{minimumFractionDigits:2})+'</strong></div>':'')+
+    '<div style="display:flex;justify-content:space-between;padding:.4rem 0;border-bottom:.5px solid var(--border)"><span style="color:var(--text2)">IVA ('+(x.iva||22)+'%)</span><strong>\u20AC '+parseFloat(iva).toLocaleString('it-IT',{minimumFractionDigits:2})+'</strong></div>'+
+    '<div style="display:flex;justify-content:space-between;padding:.5rem 0;margin-top:.25rem"><span style="font-weight:500">Totale con IVA</span><span style="font-size:18px;font-weight:600">\u20AC '+parseFloat(imp+ca+iva).toLocaleString('it-IT',{minimumFractionDigits:2})+'</span></div>'+
+    '</div>';
+
+  container.innerHTML=cards+summary;
+}
+
+function addVoceFromVoci(){
+  var id=document.getElementById('voci-select')&&document.getElementById('voci-select').value;
+  if(!id)return;
+  openModalVoce(id);
+}
+
+function deleteVoceAndRefresh(prevId,idx){
+  var x=DB.preventivi.find(function(p){return p.id===prevId;});
+  if(!x||!x.voci)return;
+  if(confirm('Eliminare questa voce?')){x.voci.splice(idx,1);saveDB();renderVoci();}
 }
 
 function renderPreventivi(){
@@ -861,93 +1062,11 @@ function renderDettaglio(){
     '</div>';
   if(x.note)html+='<div style="font-size:13px;color:var(--text2);margin-bottom:1.25rem;padding:.75rem;background:var(--bg2);border-radius:var(--radius)">'+x.note+'</div>';
 
-  // PIANO PAGAMENTI
-  html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">'+
-    '<div style="font-size:12px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.04em">Piano pagamenti ('+rate.length+' rate)</div>'+
-    '<button class="btn sm primary" onclick="openModalRata(\''+id+'\')"><i class="ti ti-plus"></i> Aggiungi rata</button>'+
+  // Links to separate tabs
+  html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:.5rem">'+
+    '<button class="btn" style="justify-content:center;padding:12px" onclick="goToRate(\''+id+'\')">'+'<i class="ti ti-calendar-due" style="margin-right:6px"></i>Piano pagamenti ('+(rate.length)+' rate)</button>'+
+    '<button class="btn" style="justify-content:center;padding:12px" onclick="goToVoci(\''+id+'\')">'+'<i class="ti ti-list-numbers" style="margin-right:6px"></i>Voci ('+voci.length+')</button>'+
     '</div>';
-  if(rate.length){
-    var totRate=rate.reduce(function(s,r){return s+parseFloat(r.importo||0);},0);
-    var rateRows=rate.map(function(r,ri){
-      return '<tr>'+
-        '<td>'+(r.descrizione||'\u2014')+'</td>'+
-        '<td style="text-align:right">\u20AC '+parseFloat(r.importo||0).toLocaleString('it-IT',{minimumFractionDigits:2})+'</td>'+
-        '<td>'+(r.data||'\u2014')+'</td>'+
-        '<td><span class="badge '+bc(r.stato||'Da pagare')+'">'+(r.stato||'Da pagare')+'</span></td>'+
-        '<td><div class="action-icons">'+
-        (r.stato==='Pagato'?'<button class="icon-btn" disabled title="Rata pagata: non modificabile" style="opacity:.3;cursor:not-allowed"><i class="ti ti-edit"></i></button>':'<button class="icon-btn" onclick="openModalRata(\''+id+'\','+ri+')"><i class="ti ti-edit"></i></button>')+
-        '<button class="icon-btn danger" onclick="deleteRata(\''+id+'\','+ri+')" '+(r.stato==='Pagato'?'disabled style="opacity:.3;cursor:not-allowed" title="Rata pagata: non eliminabile"':'')+'><i class="ti ti-trash"></i></button>'+
-        '</div></td></tr>';
-    }).join('');
-    // Mobile cards for rate
-    var rateCards=rate.map(function(r,ri){
-      return '<div class="m-card">'+
-        '<div class="m-card-head">'+
-        '<div><div class="m-card-title">'+(r.descrizione||'\u2014')+'</div></div>'+
-        '<span class="badge '+bc(r.stato||'Da pagare')+'">'+( r.stato||'Da pagare')+'</span>'+
-        '</div>'+
-        '<div class="m-card-fields">'+
-        '<div class="m-card-field"><span class="m-card-label">Data prevista</span><span class="m-card-value">'+(r.data||'\u2014')+'</span></div>'+
-        '<div class="m-card-field"><span class="m-card-label">Importo</span><span class="m-card-value big">\u20AC '+parseFloat(r.importo||0).toLocaleString('it-IT',{minimumFractionDigits:2})+'</span></div>'+
-        '</div>'+
-        (r.stato!=='Pagato'?'<div class="m-card-actions"><button class="btn sm" onclick="openModalRata(\''+id+'\','+ri+')"><i class="ti ti-edit"></i> Modifica</button>'+
-        '<button class="btn sm danger" onclick="deleteRata(\''+id+'\','+ri+')"><i class="ti ti-trash"></i></button></div>':'')+
-        '</div>';
-    }).join('');
-    html+='<div class="mobile-only">'+rateCards+'<div class="m-section-total"><span>Totale rate</span><strong>\u20AC '+parseFloat(totRate).toLocaleString('it-IT',{minimumFractionDigits:2})+'</strong></div></div>';
-    // Desktop: skip tfoot total (already in cards above) - show table only
-    html+='<div class="desktop-only"><div class="tbl-wrap" style="margin-bottom:1.25rem"><table>'+
-      '<thead><tr><th>Descrizione</th><th style="text-align:right">Importo</th><th>Data prevista</th><th>Stato</th><th></th></tr></thead>'+
-      '<tbody>'+rateRows+'</tbody>'+
-      '<tfoot><tr><td>Totale rate</td><td style="text-align:right"><strong>\u20AC '+parseFloat(totRate).toLocaleString('it-IT',{minimumFractionDigits:2})+'</strong></td><td colspan="3"></td></tr></tfoot>'+
-      '</table></div></div>';
-  } else {
-    html+='<div class="empty" style="padding:1rem;margin-bottom:1.25rem;border:.5px dashed var(--border2);border-radius:var(--radius)">Nessuna rata definita. Aggiungile con il pulsante sopra \u2014 vengono automaticamente aggiunte al piano pagamenti e al cashflow.</div>';
-  }
-
-  // VOCI DI DETTAGLIO
-  html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">'+
-    '<div style="font-size:12px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.04em">Voci di dettaglio ('+voci.length+')</div>'+
-    '<button class="btn sm" onclick="openModalVoce(\''+id+'\')"><i class="ti ti-plus"></i> Aggiungi voce</button>'+
-    '</div>';
-  if(voci.length){
-    var voceRows=voci.map(function(vv,vi){
-      return '<tr>'+
-        '<td>'+(vv.descrizione||'\u2014')+'</td>'+
-        '<td style="text-align:right">'+(vv.quantita!=null?vv.quantita:'')+'</td>'+
-        '<td>'+(vv.unita||'')+'</td>'+
-        '<td style="text-align:right">'+(vv.prezzo_unitario!=null?'\u20AC '+parseFloat(vv.prezzo_unitario).toLocaleString('it-IT',{minimumFractionDigits:2}):'\u2014')+'</td>'+
-        '<td style="text-align:right"><strong>'+(vv.totale!=null?'\u20AC '+parseFloat(vv.totale).toLocaleString('it-IT',{minimumFractionDigits:2}):'\u2014')+'</strong></td>'+
-        '<td><button class="icon-btn danger" onclick="deleteVoce(\''+id+'\','+vi+')"><i class="ti ti-trash"></i></button></td></tr>';
-    }).join('');
-    var totVoci=voci.reduce(function(s,vv){return s+parseFloat(vv.totale||0);},0);
-    var totVoci=voci.reduce(function(s,vv){return s+parseFloat(vv.totale||0);},0);
-    // Mobile cards
-    var voceCards=voci.map(function(vv,vi){
-      return '<div class="m-card">'+
-        '<div class="m-card-head" style="margin-bottom:.75rem">'+
-        '<div class="m-card-title">'+(vv.descrizione||'\u2014')+'</div>'+
-        '</div>'+
-        '<div class="m-card-fields">'+
-        '<div class="m-card-field"><span class="m-card-label">Qt\u00e0</span><span class="m-card-value">'+(vv.quantita!=null?vv.quantita:'-')+' '+(vv.unita||'')+'</span></div>'+
-        '<div class="m-card-field"><span class="m-card-label">Prezzo unit.</span><span class="m-card-value">'+(vv.prezzo_unitario!=null?'\u20AC '+parseFloat(vv.prezzo_unitario).toLocaleString('it-IT',{minimumFractionDigits:2}):'\u2014')+'</span></div>'+
-        '<div class="m-card-field full"><span class="m-card-label">Totale riga</span><span class="m-card-value big">'+(vv.totale!=null?'\u20AC '+parseFloat(vv.totale).toLocaleString('it-IT',{minimumFractionDigits:2}):'\u2014')+'</span></div>'+
-        '</div>'+
-        '<div class="m-card-actions"><button class="btn sm danger" onclick="deleteVoce(\''+id+'\','+vi+')"><i class="ti ti-trash"></i> Rimuovi</button></div>'+
-        '</div>';
-    }).join('');
-    html+=
-      '<div class="mobile-only">'+voceCards+'<div class="m-section-total">Totale voci: <strong>\u20AC '+parseFloat(totVoci).toLocaleString('it-IT',{minimumFractionDigits:2})+'</strong> \u00b7 Con IVA: <strong>\u20AC '+parseFloat(imp+cassa+iva).toLocaleString('it-IT',{minimumFractionDigits:2})+'</strong></div></div>'+
-      '<div class="desktop-only"><div class="tbl-wrap"><table>'+
-      '<thead><tr><th>Descrizione</th><th style="text-align:right">Qt\u00E0</th><th>U.M.</th><th style="text-align:right">Prezzo unit.</th><th style="text-align:right">Totale</th><th></th></tr></thead>'+
-      '<tbody>'+voceRows+'</tbody>'+
-      '<tfoot>'+
-      '<tr><td colspan="4">Totale voci</td><td style="text-align:right">\u20AC '+parseFloat(totVoci).toLocaleString('it-IT',{minimumFractionDigits:2})+'</td><td></td></tr>'+
-      '<tr><td colspan="4">IVA ('+(x.iva||22)+'%)</td><td style="text-align:right">\u20AC '+parseFloat(imp*parseFloat(x.iva||22)/100).toLocaleString('it-IT',{minimumFractionDigits:2})+'</td><td></td></tr>'+
-      '<tr><td colspan="4"><strong>Totale con IVA</strong></td><td style="text-align:right"><strong>\u20AC '+parseFloat(imp+cassa+iva).toLocaleString('it-IT',{minimumFractionDigits:2})+'</strong></td><td></td></tr>'+
-      '</tfoot></table></div></div>';
-  }
-
   container.innerHTML=html;
 }
 
@@ -1002,6 +1121,7 @@ function saveRata(prevId,rataIdx){
       data:rata.data,importo:rata.importo,tipo:'Acconto',riferimento:'',stato:rata.stato,note:rata.descrizione});
   }
   saveDB();closeModal();renderDettaglio();
+  if(document.getElementById('page-rate')&&document.getElementById('page-rate').classList.contains('active'))renderRate();
 }
 
 function deleteRata(prevId,idx){
@@ -1080,6 +1200,7 @@ function saveVoce(prevId){
   x.voci.push({descrizione:v('v-desc'),quantita:qty?parseFloat(qty):null,unita:v('v-um'),
     prezzo_unitario:pu?parseFloat(pu):null,totale:tot?parseFloat(tot):null});
   saveDB();closeModal();renderDettaglio();
+  if(document.getElementById('page-rate')&&document.getElementById('page-rate').classList.contains('active'))renderRate();
 }
 
 function deleteVoce(prevId,idx){
