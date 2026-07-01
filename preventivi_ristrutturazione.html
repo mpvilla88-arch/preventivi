@@ -130,7 +130,12 @@ tfoot td{font-weight:500;background:var(--bg2);border-top:.5px solid var(--borde
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 /* RESPONSIVE */
+/* Show/hide based on screen */
+.mobile-only{display:none}
+.desktop-only{display:block}
 @media(max-width:680px){
+  .mobile-only{display:block}
+  .desktop-only{display:none}
   .prev-cards{display:block}
   .prev-table{display:none}
   .grid4{grid-template-columns:1fr 1fr}
@@ -1306,51 +1311,41 @@ function renderPagamenti(){
   if(!pg.length){document.getElementById('table-pagamenti').innerHTML='<div class="empty">Nessun pagamento registrato.</div>';return;}
   var totT=pg.reduce(function(s,x){return s+parseFloat(x.importo||0);},0);
   var totP=pg.filter(function(x){return x.stato==='Pagato';}).reduce(function(s,x){return s+parseFloat(x.importo||0);},0);
-  // Mobile cards
   var cards=pg.map(function(x){
     var prev=DB.preventivi.find(function(p){return p.id===x.prevId;});
     var cat=prev&&prev.categoria||x.categoria||'\u2014';
     var prof=prev&&prev.professionista||x.professionista||'\u2014';
-    return '<div class="m-card">'+
-      '<div class="m-card-head">'+
-      '<div><div class="m-card-title">'+cat+'</div><div class="m-card-sub">'+prof+'</div></div>'+
-      '<span class="badge '+bc(x.stato)+'">'+x.stato+'</span>'+
-      '</div>'+
-      '<div class="m-card-fields">'+
-      '<div class="m-card-field"><span class="m-card-label">Data</span><span class="m-card-value">'+(x.data||'\u2014')+'</span></div>'+
-      '<div class="m-card-field"><span class="m-card-label">Tipo</span><span class="badge '+bc(x.tipo)+'">'+(x.tipo||'\u2014')+'</span></div>'+
-      '<div class="m-card-field full"><span class="m-card-label">Importo</span><span class="m-card-value big">'+fmt(x.importo||0)+'</span></div>'+
-      (x.riferimento?'<div class="m-card-field full"><span class="m-card-label">Rif. CRO</span><span class="m-card-value">'+x.riferimento+'</span></div>':'')+
-      (x.note?'<div class="m-card-field full"><span class="m-card-label">Note</span><span class="m-card-value">'+x.note+'</span></div>':'')+
-      '</div>'+
-      '<div class="m-card-actions">'+
-      '<button class="btn sm" onclick="openModalPagamento(\''+x.id+'\')" ><i class="ti ti-edit"></i> Modifica</button>'+
-      '<button class="btn sm danger" onclick="deleteItem(\'pagamenti\',\''+x.id+'\',renderPagamenti)"><i class="ti ti-trash"></i></button>'+
+    var isPagato=x.stato==='Pagato';
+    var accent=isPagato?'var(--green)':'var(--blue)';
+    return '<div style="background:var(--bg2);border:.5px solid var(--border);border-left:3px solid '+accent+';border-radius:12px;padding:1.25rem;margin-bottom:1rem'+(isPagato?';opacity:.85':'')+'">'+ 
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem">'+ 
+      '<div><div style="font-size:14px;font-weight:500;line-height:1.4">'+cat+'</div>'+ 
+      '<div style="font-size:12px;color:var(--text2);margin-top:2px">'+prof+'</div></div>'+ 
+      '<span class="badge '+bc(x.stato)+'">'+x.stato+'</span>'+ 
+      '</div>'+ 
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:.625rem;margin-bottom:.75rem">'+ 
+      '<div style="background:var(--bg);border-radius:8px;padding:.75rem">'+ 
+      '<div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Data</div>'+ 
+      '<div style="font-size:14px;font-weight:500">'+(x.data?x.data.split('-').reverse().join('/'):'\u2014')+'</div>'+ 
+      '</div>'+ 
+      '<div style="background:var(--bg);border-radius:8px;padding:.75rem">'+ 
+      '<div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Tipo</div>'+ 
+      '<span class="badge '+bc(x.tipo)+'">'+(x.tipo||'\u2014')+'</span>'+ 
+      '</div>'+ 
+      '</div>'+ 
+      '<div style="background:var(--bg);border-radius:8px;padding:.875rem;display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">'+ 
+      '<span style="font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:.04em">Importo</span>'+ 
+      '<span style="font-size:20px;font-weight:500">'+fmt(x.importo||0)+'</span>'+ 
+      '</div>'+ 
+      (x.riferimento?'<div style="background:var(--bg);border-radius:8px;padding:.75rem;margin-bottom:.625rem"><div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Rif. CRO</div><div style="font-size:13px;font-family:monospace">'+x.riferimento+'</div></div>':'')+ 
+      (x.note?'<div style="background:var(--bg);border-radius:8px;padding:.75rem;margin-bottom:.625rem"><div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Note</div><div style="font-size:13px">'+x.note+'</div></div>':'')+ 
+      '<div style="padding-top:.875rem;border-top:.5px solid var(--border);display:flex;gap:8px">'+ 
+      '<button class="btn sm" style="flex:1;justify-content:center" onclick="openModalPagamento(\''+x.id+'\')" ><i class="ti ti-edit"></i> Modifica</button>'+ 
+      '<button class="btn sm danger" onclick="deleteItem(\'pagamenti\',\''+x.id+'\',renderPagamenti)"><i class="ti ti-trash"></i></button>'+ 
       '</div></div>';
   }).join('');
-  // Desktop table
-  var rows=pg.map(function(x){
-    var prev=DB.preventivi.find(function(p){return p.id===x.prevId;});
-    return '<tr><td>'+(x.data||'\u2014')+'</td>'+
-      '<td>'+(prev&&prev.categoria||x.categoria||'\u2014')+'</td>'+
-      '<td>'+(prev&&prev.professionista||x.professionista||'\u2014')+'</td>'+
-      '<td><span class="badge '+bc(x.tipo)+'">'+(x.tipo||'\u2014')+'</span></td>'+
-      '<td style="text-align:right"><strong>'+fmt(x.importo||0)+'</strong></td>'+
-      '<td style="font-size:12px;color:var(--text2)">'+(x.riferimento||'\u2014')+'</td>'+
-      '<td><span class="badge '+bc(x.stato)+'">'+x.stato+'</span></td>'+
-      '<td><div class="action-icons">'+
-      '<button class="icon-btn" onclick="openModalPagamento(\''+x.id+'\')"  ><i class="ti ti-edit"></i></button>'+
-      '<button class="icon-btn danger" onclick="deleteItem(\'pagamenti\',\''+x.id+'\',renderPagamenti)"><i class="ti ti-trash"></i></button>'+
-      '</div></td></tr>';
-  }).join('');
-  document.getElementById('table-pagamenti').innerHTML=
-    '<div class="mobile-only">'+cards+'<div class="m-section-total">Totale: <strong>'+fmt(totT)+'</strong> \u00b7 Pagati: <strong>'+fmt(totP)+'</strong></div></div>'+
-    '<div class="desktop-only"><div class="tbl-wrap"><table>'+
-    '<thead><tr><th>Data</th><th>Categoria</th><th>Professionista</th><th>Tipo</th><th style="text-align:right">Importo</th><th>Rif. CRO</th><th>Stato</th><th></th></tr></thead>'+
-    '<tbody>'+rows+'</tbody>'+
-    '<tfoot><tr><td colspan="4">Pianificato / pagato</td><td style="text-align:right">'+fmt(totT)+'</td>'+
-    '<td colspan="3">di cui pagati: <strong>'+fmt(totP)+'</strong></td></tr></tfoot>'+
-    '</table></div></div>';
+  document.getElementById('table-pagamenti').innerHTML=cards+
+    '<div class="m-section-total" style="margin-top:.5rem">Totale: <strong>'+fmt(totT)+'</strong> \u00b7 Pagati: <strong>'+fmt(totP)+'</strong></div>';
 }
 
 function openModalPagamento(id){
