@@ -475,8 +475,13 @@ function setSyncLabel(state,text){
 }
 
 // ---
-function fmt(n){return '\u20AC '+parseFloat(n||0).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});}
-function fmtE(n){return 'e '+parseFloat(n||0).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmt(n){
+  var num=parseFloat(n||0);
+  var parts=num.toFixed(2).split('.');
+  parts[0]=parts[0].replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+  return '\u20AC '+parts[0]+','+parts[1];
+}
+function fmtE(n){return fmt(n);}
 function bc(s){var x=(s||'').toLowerCase().replace(/[^a-z0-9]+/g,'-');return 'b-'+x;}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
 function v(id){var el=document.getElementById(id);return el?el.value.trim():'';}
@@ -853,7 +858,7 @@ function renderPreventivi(){
   var totValLordo=inVal.reduce(function(s,x){var i=parseFloat(x.imponibile||0),ca=i*parseFloat(x.cassa||0)/100;return s+i+ca+(i+ca)*parseFloat(x.iva||22)/100;},0);
   var totAllNetto=totAccNetto+totValNetto;
   var totAllLordo=totAccLordo+totValLordo;
-  function fmtK(n){return '\u20AC '+parseFloat(n||0).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});}
+  function fmtK(n){return fmt(n);}
   function kpiSub(netto,lordo){
     return '<div style="margin-top:5px;font-size:11px;color:var(--text2);line-height:1.7">'+
       'Netto: <strong style="color:var(--text)">'+fmtK(netto)+'</strong><br>'+
@@ -960,7 +965,7 @@ function updateTotalePreventivo(){
   var cVal=imp*ca/100;
   var tot=imp+cVal+(imp+cVal)*iva/100;
   var el=document.getElementById('f-tot-preview');
-  if(el)el.textContent=tot>0?'\u20AC '+tot.toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2}):'\u2014';
+  if(el)el.textContent=tot>0?fmt(tot):'\u2014';
 }
 
 function savePreventivo(id){
