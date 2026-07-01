@@ -475,7 +475,7 @@ function setSyncLabel(state,text){
 }
 
 // ---
-function fmt(n){return 'EUR '+parseFloat(n||0).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmt(n){return '\u20AC '+parseFloat(n||0).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function fmtE(n){return 'e '+parseFloat(n||0).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function bc(s){var x=(s||'').toLowerCase().replace(/[^a-z0-9]+/g,'-');return 'b-'+x;}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
@@ -666,9 +666,9 @@ function renderRate(){
 
   // Summary metrics
   var html='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1.25rem">'+
-    '<div class="metric"><div class="lbl">Totale preventivo</div><div class="val" style="font-size:15px">\u20AC '+parseFloat(totPrev).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2})+'</div></div>'+
-    '<div class="metric"><div class="lbl">Totale rate</div><div class="val" style="font-size:15px">\u20AC '+parseFloat(totRate).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2})+'</div></div>'+
-    '<div class="metric"><div class="lbl">Gi\u00e0 pagato</div><div class="val" style="font-size:15px;color:var(--green)">\u20AC '+parseFloat(totPagato).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2})+'</div></div>'+
+    '<div class="metric"><div class="lbl">Totale preventivo</div><div class="val" style="font-size:15px">'+fmt(totPrev)+'</div></div>'+
+    '<div class="metric"><div class="lbl">Totale rate</div><div class="val" style="font-size:15px">'+fmt(totRate)+'</div></div>'+
+    '<div class="metric"><div class="lbl">Gi\u00e0 pagato</div><div class="val" style="font-size:15px;color:var(--green)">'+fmt(totPagato)+'</div></div>'+
     '<div class="metric"><div class="lbl">Da pagare</div><div class="val" style="font-size:15px;color:var(--amber)">\u20AC '+parseFloat(Math.max(0,totRate-totPagato)).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2})+'</div></div>'+
     '</div>';
 
@@ -694,7 +694,7 @@ function renderRate(){
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:.625rem;margin-bottom:1rem">'+
         '<div style="background:var(--bg);border-radius:8px;padding:.75rem">'+
         '<div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Importo</div>'+
-        '<div style="font-size:20px;font-weight:500;color:var(--text)">\u20AC '+parseFloat(r.importo||0).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2})+'</div>'+
+        '<div style="font-size:20px;font-weight:500;color:var(--text)">'+fmt(r.importo||0)+'</div>'+
         (pct>0?'<div style="font-size:10px;color:var(--text2);margin-top:3px">'+pct+'% del totale</div>':'')+
         '</div>'+
         '<div style="background:var(--bg);border-radius:8px;padding:.75rem">'+
@@ -770,13 +770,13 @@ function renderVoci(){
         (vv.prezzo_unitario!=null?
           '<div style="background:var(--bg);border-radius:8px;padding:.75rem">'+
           '<div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Prezzo unit.</div>'+
-          '<div style="font-size:14px;font-weight:500;color:var(--text)">\u20AC '+parseFloat(vv.prezzo_unitario).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2})+'</div>'+
+          '<div style="font-size:14px;font-weight:500;color:var(--text)">'+fmt(vv.prezzo_unitario)+'</div>'+
           '</div>':'<div></div>')+
         '</div>':'')+
       (vv.totale!=null?
         '<div style="background:var(--bg);border-radius:8px;padding:.875rem;margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center">'+
         '<span style="font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:.04em">Totale riga</span>'+
-        '<span style="font-size:20px;font-weight:500;color:var(--text)">\u20AC '+parseFloat(vv.totale).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2})+'</span>'+
+        '<span style="font-size:20px;font-weight:500;color:var(--text)">'+fmt(vv.totale)+'</span>'+
         '</div>':'')+
       '<div style="padding-top:.875rem;border-top:.5px solid var(--border);display:flex;gap:8px;justify-content:flex-end">'+
       '<button class="btn sm" onclick="editVoceFromVoci(\''+id+'\','+vi+')"><i class="ti ti-edit"></i> Modifica</button>'+
@@ -788,10 +788,10 @@ function renderVoci(){
   // Summary totals (instead of table)
   var summary='<div style="background:var(--bg2);border-radius:var(--radius-lg);padding:1rem;margin-top:.5rem">'+
     '<div style="font-size:12px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.75rem">Riepilogo</div>'+
-    '<div style="display:flex;justify-content:space-between;padding:.4rem 0;border-bottom:.5px solid var(--border)"><span style="color:var(--text2)">Totale voci</span><strong>\u20AC '+parseFloat(totVoci).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2})+'</strong></div>'+
-    (ca>0?'<div style="display:flex;justify-content:space-between;padding:.4rem 0;border-bottom:.5px solid var(--border)"><span style="color:var(--text2)">Cassa prev. ('+(x.cassa||0)+'%)</span><strong>\u20AC '+parseFloat(ca).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2})+'</strong></div>':'')+
-    '<div style="display:flex;justify-content:space-between;padding:.4rem 0;border-bottom:.5px solid var(--border)"><span style="color:var(--text2)">IVA ('+(x.iva||22)+'%)</span><strong>\u20AC '+parseFloat(iva).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2})+'</strong></div>'+
-    '<div style="display:flex;justify-content:space-between;padding:.5rem 0;margin-top:.25rem"><span style="font-weight:500">Totale con IVA</span><span style="font-size:18px;font-weight:600">\u20AC '+parseFloat(imp+ca+iva).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2})+'</span></div>'+
+    '<div style="display:flex;justify-content:space-between;padding:.4rem 0;border-bottom:.5px solid var(--border)"><span style="color:var(--text2)">Totale voci</span><strong>'+fmt(totVoci)+'</strong></div>'+
+    (ca>0?'<div style="display:flex;justify-content:space-between;padding:.4rem 0;border-bottom:.5px solid var(--border)"><span style="color:var(--text2)">Cassa prev. ('+(x.cassa||0)+'%)</span><strong>'+fmt(ca)+'</strong></div>':'')+
+    '<div style="display:flex;justify-content:space-between;padding:.4rem 0;border-bottom:.5px solid var(--border)"><span style="color:var(--text2)">IVA ('+(x.iva||22)+'%)</span><strong>'+fmt(iva)+'</strong></div>'+
+    '<div style="display:flex;justify-content:space-between;padding:.5rem 0;margin-top:.25rem"><span style="font-weight:500">Totale con IVA</span><span style="font-size:18px;font-weight:600">'+fmt(imp+ca+iva)+'</span></div>'+
     '</div>';
 
   container.innerHTML=cards+summary;
@@ -874,7 +874,7 @@ function renderPreventivi(){
       '<div class="pc-top"><div><div class="pc-cat">'+(x.categoria||'\u2014')+'</div><div class="pc-prof">'+(x.professionista||'\u2014')+'</div>'+(x.tipo?'<div style="margin-top:3px">'+tipoBadge(x.tipo)+'</div>':'')+'</div>'+
       '<span class="badge '+bc(x.stato)+'">'+x.stato+'</span></div>'+
       '<div class="pc-bottom"><span style="color:var(--text2);font-size:12px">'+(x.data||'\u2014')+' \u00B7 IVA '+(x.iva||22)+'%</span>'+
-      '<span class="pc-tot">\u20AC '+parseFloat(imp+cassa+iva).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2})+'</span></div>'+
+      '<span class="pc-tot">'+fmt(imp+cassa+iva)+'</span></div>'+
       '<div style="display:flex;gap:6px;margin-top:.6rem;justify-content:flex-end">'+
       '<button class="btn sm" onclick="openModalPreventivo(this.dataset.id)" data-id="'+x.id+'"><i class="ti ti-edit"></i> Modifica</button>'+
       '<button class="btn sm" onclick="goDettaglio(this.dataset.id)" data-id="'+x.id+'"><i class="ti ti-list"></i> Dettaglio</button>'+
@@ -890,7 +890,7 @@ function renderPreventivi(){
       '<td><strong>'+(x.categoria||'\u2014')+'</strong></td>'+
       '<td>'+(x.professionista||'\u2014')+'</td>'+
       '<td>'+(x.data?x.data.split('-').reverse().join('/'):'-')+'</td>'+
-      '<td style="text-align:right"><strong>\u20AC '+parseFloat(imp+cassa+iva).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2})+'</strong><br><span style="font-size:10px;color:var(--text2)">imp. \u20AC '+parseFloat(imp).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2})+(cassa>0?' + cassa \u20AC '+parseFloat(cassa).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2}):'')+'</span></td>'+
+      '<td style="text-align:right"><strong>'+fmt(imp+cassa+iva)+'</strong><br><span style="font-size:10px;color:var(--text2)">imp. '+fmt(imp)+(cassa>0?' + cassa '+fmt(cassa):'')+'</span></td>'+
       '<td><span class="badge '+bc(x.stato)+'">'+x.stato+'</span></td>'+
       '<td><div class="action-icons">'+
       '<button class="icon-btn" onclick="openModalPreventivo(this.dataset.id)" data-id="'+x.id+'"><i class="ti ti-edit"></i></button>'+
@@ -899,11 +899,11 @@ function renderPreventivi(){
       '</div></td></tr>';
   });
   document.getElementById('table-preventivi').innerHTML=
-    '<div class="prev-cards">'+cards+'<div style="padding:.5rem 0;font-size:13px;color:var(--text2);text-align:right;border-top:.5px solid var(--border)">Totale: <strong>\u20AC '+parseFloat(totAll).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2})+'</strong></div></div>'+
+    '<div class="prev-cards">'+cards+'<div style="padding:.5rem 0;font-size:13px;color:var(--text2);text-align:right;border-top:.5px solid var(--border)">Totale: <strong>'+fmt(totAll)+'</strong></div></div>'+
     '<div class="prev-table"><div class="tbl-wrap"><table>'+
     '<thead><tr><th>Tipo</th><th>Categoria</th><th>Professionista</th><th>Data</th><th style="text-align:right">Totale IVA incl.</th><th>Stato</th><th></th></tr></thead>'+
     '<tbody>'+rows+'</tbody>'+
-    '<tfoot><tr><td colspan="4">Totale generale</td><td style="text-align:right">\u20AC '+parseFloat(totAll).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2})+'</td><td colspan="2"></td></tr></tfoot>'+
+    '<tfoot><tr><td colspan="4">Totale generale</td><td style="text-align:right">'+fmt(totAll)+'</td><td colspan="2"></td></tr></tfoot>'+
     '</table></div></div>';
 }
 
@@ -1141,9 +1141,9 @@ function renderDettaglio(){
   var html='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:1.25rem">'+
     '<div class="metric"><div class="lbl">Professionista</div><div style="font-size:13px;font-weight:500;margin-top:4px">'+(x.professionista||'\u2014')+'</div></div>'+
     '<div class="metric"><div class="lbl">Data</div><div style="font-size:13px;font-weight:500;margin-top:4px">'+(x.data||'\u2014')+'</div></div>'+
-    '<div class="metric"><div class="lbl">Imponibile</div><div style="font-size:13px;font-weight:500;margin-top:4px">\u20AC '+parseFloat(imp).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2})+'</div></div>'+
-    (cassa>0?'<div class="metric"><div class="lbl">Cassa prev. ('+(x.cassa||0)+'%)</div><div style="font-size:13px;font-weight:500;margin-top:4px">\u20AC '+parseFloat(cassa).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2})+'</div></div>':'')+
-    '<div class="metric"><div class="lbl">Totale con IVA</div><div style="font-size:14px;font-weight:500;margin-top:4px">\u20AC '+parseFloat(imp+cassa+iva).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2})+'</div></div>'+
+    '<div class="metric"><div class="lbl">Imponibile</div><div style="font-size:13px;font-weight:500;margin-top:4px">'+fmt(imp)+'</div></div>'+
+    (cassa>0?'<div class="metric"><div class="lbl">Cassa prev. ('+(x.cassa||0)+'%)</div><div style="font-size:13px;font-weight:500;margin-top:4px">'+fmt(cassa)+'</div></div>':'')+
+    '<div class="metric"><div class="lbl">Totale con IVA</div><div style="font-size:14px;font-weight:500;margin-top:4px">'+fmt(imp+cassa+iva)+'</div></div>'+
     '</div>';
   if(x.note)html+='<div style="font-size:13px;color:var(--text2);margin-bottom:1.25rem;padding:.75rem;background:var(--bg2);border-radius:var(--radius)">'+x.note+'</div>';
 
@@ -1166,7 +1166,7 @@ function openModalRata(prevId,rataIdx){
   document.getElementById('modal-content').innerHTML=
     '<h3>'+(editMode?'Modifica rata':'Aggiungi rata di pagamento')+'</h3>'+
     '<div class="alert info" style="margin-bottom:1rem"><i class="ti ti-info-circle"></i>'+
-    '<span>Totale preventivo con IVA: <strong>\u20AC '+parseFloat(tot).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2})+'</strong>.</span></div>'+
+    '<span>Totale preventivo con IVA: <strong>'+fmt(tot)+'</strong>.</span></div>'+
     '<div class="frow"><label>Descrizione</label><input id="r-desc" value="'+(rata&&rata.descrizione||'')+'" placeholder="es. 20% inizio lavori"></div>'+
     '<div class="frow c3">'+
     '<div><label>% sul totale</label><input id="r-pct" type="number" step="1" min="0" max="100" placeholder="es. 20" oninput="document.getElementById(\'r-imp\').value=('+tot+'*parseFloat(this.value||0)/100).toFixed(2)"></div>'+
@@ -1314,7 +1314,7 @@ function renderPagamenti(){
       '<div class="m-card-fields">'+
       '<div class="m-card-field"><span class="m-card-label">Data</span><span class="m-card-value">'+(x.data||'\u2014')+'</span></div>'+
       '<div class="m-card-field"><span class="m-card-label">Tipo</span><span class="badge '+bc(x.tipo)+'">'+(x.tipo||'\u2014')+'</span></div>'+
-      '<div class="m-card-field full"><span class="m-card-label">Importo</span><span class="m-card-value big">\u20AC '+parseFloat(x.importo||0).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2})+'</span></div>'+
+      '<div class="m-card-field full"><span class="m-card-label">Importo</span><span class="m-card-value big">'+fmt(x.importo||0)+'</span></div>'+
       (x.riferimento?'<div class="m-card-field full"><span class="m-card-label">Rif. CRO</span><span class="m-card-value">'+x.riferimento+'</span></div>':'')+
       (x.note?'<div class="m-card-field full"><span class="m-card-label">Note</span><span class="m-card-value">'+x.note+'</span></div>':'')+
       '</div>'+
@@ -1330,7 +1330,7 @@ function renderPagamenti(){
       '<td>'+(prev&&prev.categoria||x.categoria||'\u2014')+'</td>'+
       '<td>'+(prev&&prev.professionista||x.professionista||'\u2014')+'</td>'+
       '<td><span class="badge '+bc(x.tipo)+'">'+(x.tipo||'\u2014')+'</span></td>'+
-      '<td style="text-align:right"><strong>\u20AC '+parseFloat(x.importo||0).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2})+'</strong></td>'+
+      '<td style="text-align:right"><strong>'+fmt(x.importo||0)+'</strong></td>'+
       '<td style="font-size:12px;color:var(--text2)">'+(x.riferimento||'\u2014')+'</td>'+
       '<td><span class="badge '+bc(x.stato)+'">'+x.stato+'</span></td>'+
       '<td><div class="action-icons">'+
@@ -1339,12 +1339,12 @@ function renderPagamenti(){
       '</div></td></tr>';
   }).join('');
   document.getElementById('table-pagamenti').innerHTML=
-    '<div class="mobile-only">'+cards+'<div class="m-section-total">Totale: <strong>\u20AC '+parseFloat(totT).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2})+'</strong> \u00b7 Pagati: <strong>\u20AC '+parseFloat(totP).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2})+'</strong></div></div>'+
+    '<div class="mobile-only">'+cards+'<div class="m-section-total">Totale: <strong>'+fmt(totT)+'</strong> \u00b7 Pagati: <strong>'+fmt(totP)+'</strong></div></div>'+
     '<div class="desktop-only"><div class="tbl-wrap"><table>'+
     '<thead><tr><th>Data</th><th>Categoria</th><th>Professionista</th><th>Tipo</th><th style="text-align:right">Importo</th><th>Rif. CRO</th><th>Stato</th><th></th></tr></thead>'+
     '<tbody>'+rows+'</tbody>'+
-    '<tfoot><tr><td colspan="4">Pianificato / pagato</td><td style="text-align:right">\u20AC '+parseFloat(totT).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2})+'</td>'+
-    '<td colspan="3">di cui pagati: <strong>\u20AC '+parseFloat(totP).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2})+'</strong></td></tr></tfoot>'+
+    '<tfoot><tr><td colspan="4">Pianificato / pagato</td><td style="text-align:right">'+fmt(totT)+'</td>'+
+    '<td colspan="3">di cui pagati: <strong>'+fmt(totP)+'</strong></td></tr></tfoot>'+
     '</table></div></div>';
 }
 
@@ -1381,8 +1381,8 @@ function renderCashflow(){
   var pg=DB.pagamenti;
   var totI=DB.preventivi.filter(function(x){return x.stato==='Accettato';}).reduce(function(s,x){return s+(function(){var i=parseFloat(x.imponibile||0),ca=parseFloat(x.cassa||0),iv=parseFloat(x.iva||22);return i*(1+ca/100)*(1+iv/100);}());},0);
   var totP=pg.filter(function(x){return x.stato==='Pagato';}).reduce(function(s,x){return s+parseFloat(x.importo||0);},0);
-  document.getElementById('cf-totale').textContent='\u20AC '+parseFloat(totI).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});
-  document.getElementById('cf-pagato').textContent='\u20AC '+parseFloat(totP).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});
+  document.getElementById('cf-totale').textContent=fmt(totI);
+  document.getElementById('cf-pagato').textContent=fmt(totP);
   var byM={};
   pg.forEach(function(x){
     if(!x.data)return;
@@ -1402,9 +1402,9 @@ function renderCashflow(){
     html+='<div class="cf-row">'+
       '<span style="font-size:12px;font-weight:500">'+MESI[mo-1]+' '+y+'</span>'+
       '<div><div class="bar-wrap"><div class="bar-fill" style="width:'+pct+'%"></div></div></div>'+
-      '<span style="text-align:right;font-size:13px">\u20AC '+parseFloat(m.p).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2})+'</span>'+
-      '<span style="text-align:right;font-size:13px;color:'+(m.pag>0?'var(--green)':'var(--text2)')+'\">\u20AC '+parseFloat(m.pag).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2})+'</span>'+
-      '<span style="text-align:right;font-size:13px">\u20AC '+parseFloat(cum).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2})+'</span>'+
+      '<span style="text-align:right;font-size:13px">'+fmt(m.p)+'</span>'+
+      '<span style="text-align:right;font-size:13px;color:'+(m.pag>0?'var(--green)':'var(--text2)')+'\">'+fmt(m.pag)+'</span>'+
+      '<span style="text-align:right;font-size:13px">'+fmt(cum)+'</span>'+
       '</div>';
   });
   document.getElementById('cashflow-table').innerHTML=html;
@@ -1458,7 +1458,7 @@ function renderScadenze(months){
     // Month header row
     rows+='<tr style="background:var(--bg2)">'+
       '<td colspan="4" style="font-weight:500;font-size:12px;color:var(--text2);padding:6px 10px">'+label+'</td>'+
-      '<td style="text-align:right;font-weight:500;font-size:12px;padding:6px 10px">'+'\u20AC '+parseFloat(mTot).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2})+'</td>'+
+      '<td style="text-align:right;font-weight:500;font-size:12px;padding:6px 10px">'+fmt(mTot)+'</td>'+
       '<td></td></tr>';
     byM[k].forEach(function(x){
       var prev=DB.preventivi.find(function(p){return p.id===x.prevId;});
@@ -1472,7 +1472,7 @@ function renderScadenze(months){
         '<td style="font-size:13px">'+(prev&&prev.professionista||x.professionista||'\u2014')+'</td>'+
         '<td style="font-size:12px;color:var(--text2)">'+dStr+(scadLabel?'<span style="margin-left:6px;color:var(--amber);font-weight:500;font-size:11px">'+scadLabel+'</span>':'')+'</td>'+
         '<td><span class="badge '+bc(x.stato)+'">'+x.stato+'</span></td>'+
-        '<td style="text-align:right;font-weight:500">'+'\u20AC '+parseFloat(x.importo||0).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2})+'</td>'+
+        '<td style="text-align:right;font-weight:500">'+fmt(x.importo||0)+'</td>'+
         '<td style="font-size:11px;color:var(--text3)">'+(x.note||x.tipo||'')+'</td>'+
         '</tr>';
     });
@@ -1490,12 +1490,12 @@ function renderScadenze(months){
       '</div>'+
       '<div class="m-card-fields">'+
       '<div class="m-card-field"><span class="m-card-label">Data scadenza</span><span class="m-card-value">'+dStr+'</span>'+(warn?'<span style="display:block;margin-top:3px;color:var(--amber);font-size:11px;font-weight:500">'+warn+'</span>':'')+'</div>'+
-      '<div class="m-card-field"><span class="m-card-label">Importo</span><span class="m-card-value big">€ '+parseFloat(x.importo||0).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2})+'</span></div>'+
+      '<div class="m-card-field"><span class="m-card-label">Importo</span><span class="m-card-value big">€ '+fmt(x.importo||0)+'</span></div>'+
       (x.note?'<div class="m-card-field full"><span class="m-card-label">Note</span><span class="m-card-value">'+x.note+'</span></div>':'')+
       '</div>'+
       '</div>';
   }).join('');
-  var scTotale='<div class="m-section-total">Totale: <strong>\u20AC '+parseFloat(tot).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2})+'</strong></div>';
+  var scTotale='<div class="m-section-total">Totale: <strong>'+fmt(tot)+'</strong></div>';
   container.innerHTML=
     '<div class="mobile-only">'+scCards+scTotale+'</div>'+
     '<div class="desktop-only"><div class="tbl-wrap"><table>'+
@@ -1503,7 +1503,7 @@ function renderScadenze(months){
     '<tbody>'+rows+'</tbody>'+
     '<tfoot><tr>'+
     '<td colspan="4">Totale periodo · Da pagare</td>'+
-    '<td style="text-align:right"><strong>\u20AC '+parseFloat(tot).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2})+'</strong> <span style="color:var(--amber);font-size:12px">(\u20AC '+parseFloat(totDaPagare).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2})+' da pagare)</span></td>'+
+    '<td style="text-align:right"><strong>'+fmt(tot)+'</strong> <span style="color:var(--amber);font-size:12px">('+fmt(totDaPagare)+'da pagare)</span></td>'+
     '<td></td></tr></tfoot>'+
     '</table></div>';
 }
@@ -1525,7 +1525,7 @@ function renderFatture(){
       '<div class="m-card-fields">'+
       '<div class="m-card-field"><span class="m-card-label">N° fattura</span><span class="m-card-value">'+(x.numero||'—')+'</span></div>'+
       '<div class="m-card-field"><span class="m-card-label">Data</span><span class="m-card-value">'+(x.data||'—')+'</span></div>'+
-      '<div class="m-card-field full"><span class="m-card-label">Importo</span><span class="m-card-value big">€ '+parseFloat(x.importo||0).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2})+'</span></div>'+
+      '<div class="m-card-field full"><span class="m-card-label">Importo</span><span class="m-card-value big">€ '+fmt(x.importo||0)+'</span></div>'+
       '<div class="m-card-field full"><span class="m-card-label">Bonifico collegato</span><span class="m-card-value">'+bon+'</span></div>'+
       '</div>'+
       '<div class="m-card-actions">'+
@@ -1533,7 +1533,7 @@ function renderFatture(){
       '<button class="btn sm danger" onclick="deleteItem(\'fatture\',\''+x.id+'\',renderFatture)"><i class="ti ti-trash"></i></button>'+
       '</div></div>';
   }).join('');
-  var mTotal='<div class="m-section-total">Fatture ricevute: <strong>\u20AC '+parseFloat(totD).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2})+'</strong> \u00b7 Detrazione 50%: <strong>\u20AC '+parseFloat(totD*0.5).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2})+'</strong></div>';
+  var mTotal='<div class="m-section-total">Fatture ricevute: <strong>'+fmt(totD)+'</strong> \u00b7 Detrazione 50%: <strong>'+fmt(totD*0.5)+'</strong></div>';
   // Desktop table rows
   var rows=ft.map(function(x){
     var pag=DB.pagamenti.find(function(p){return p.id===x.pagId;});
@@ -1543,7 +1543,7 @@ function renderFatture(){
       '<td>'+(x.data||'\u2014')+'</td>'+
       '<td>'+(x.emittente||'\u2014')+'</td>'+
       '<td>'+(x.descrizione||'\u2014')+'</td>'+
-      '<td style="text-align:right"><strong>\u20AC '+parseFloat(x.importo||0).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2})+'</strong></td>'+
+      '<td style="text-align:right"><strong>'+fmt(x.importo||0)+'</strong></td>'+
       '<td><span class="badge '+bc(x.statoFattura)+'">'+x.statoFattura+'</span></td>'+
       '<td style="font-size:12px;color:var(--text2)">'+bon+'</td>'+
       '<td><div class="action-icons">'+
@@ -1557,14 +1557,14 @@ function renderFatture(){
     '<thead><tr><th>N\u00b0 fattura</th><th>Data</th><th>Emittente</th><th>Descrizione</th><th style="text-align:right">Importo</th><th>Stato</th><th>Bonifico</th><th></th></tr></thead>'+
     '<tbody>'+rows+'</tbody>'+
     '<tfoot><tr><td colspan="4">Totale fatture ricevute \u00b7 detrazione 50%</td>'+
-    '<td style="text-align:right">\u20AC '+parseFloat(totD).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2})+'</td>'+
-    '<td colspan="3"><strong>\u20AC '+parseFloat(totD*0.5).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2})+'</strong></td></tr></tfoot>'+
+    '<td style="text-align:right">'+fmt(totD)+'</td>'+
+    '<td colspan="3"><strong>'+fmt(totD*0.5)+'</strong></td></tr></tfoot>'+
     '</table></div></div>';
 }
 
 function openModalFattura(id){
   var x=id?DB.fatture.find(function(f){return f.id===id;}):null;
-  var optsPag=DB.pagamenti.map(function(p){return '<option value="'+p.id+'"'+(x&&x.pagId===p.id?' selected':'')+'>'+((p.data||'\u2014')+' \u00B7 '+p.tipo+' \u00B7 \u20AC '+parseFloat(p.importo||0).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2}))+'</option>';}).join('');
+  var optsPag=DB.pagamenti.map(function(p){return '<option value="'+p.id+'"'+(x&&x.pagId===p.id?' selected':'')+'>'+((p.data||'\u2014')+' \u00B7 '+p.tipo+' \u00B7 \u20AC '+fmt(p.importo||0))+'</option>';}).join('');
   var statOpts=STATI_FAT.map(function(s){return '<option'+((x&&x.statoFattura||'Non ricevuta')===s?' selected':'')+'>'+s+'</option>';}).join('');
   document.getElementById('modal-content').innerHTML=
     '<h3>'+(x?'Modifica fattura':'Registra fattura')+'</h3>'+
